@@ -1,0 +1,6 @@
+{
+  "name": "BloodSearch - Bangladesh Emergency Blood Network",
+  "description": "Emergency blood donor finder, live hospital blood requests, compatibility guide, and 64-district voluntary donor network for Bangladesh.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="dropMain" x1="176" y1="62" x2="342" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff2424" />
+      <stop offset="55%" stop-color="#dc1616" />
+      <stop offset="100%" stop-color="#8b0808" />
+    </linearGradient>
+    <linearGradient id="dropGloss" x1="162" y1="120" x2="256" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff6b6b" stop-opacity="0.72" />
+      <stop offset="100%" stop-color="#dc1616" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="navySwoosh" x1="72" y1="260" x2="408" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b2d4d" />
+      <stop offset="100%" stop-color="#07192d" />
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <!-- Main 3D Crimson Blood Drop -->
+  <path
+    d="M250 56C250 56 128 214 128 312C128 381.588 182.621 438 250 438C317.379 438 372 381.588 372 312C372 214 250 56 250 56Z"
+    fill="url(#dropMain)"
+  />
+  <path
+    d="M250 74C224 114 146 226 146 308C146 362 184 402 232 414C192 390 172 350 174 298C176 236 226 132 250 74Z"
+    fill="url(#dropGloss)"
+  />
+
+  <!-- White Medical Cross -->
+  <rect x="234" y="150" width="32" height="92" rx="6" fill="#ffffff" />
+  <rect x="204" y="180" width="92" height="32" rx="6" fill="#ffffff" />
+
+  <!-- Three Community Donor Silhouettes + Heart -->
+  <circle cx="192" cy="288" r="16" fill="#ffffff" fill-opacity="0.92" />
+  <path d="M164 342C164 322 176 310 192 310C208 310 220 322 220 342V362H164V342Z" fill="#ffffff" fill-opacity="0.9" />
+
+  <circle cx="308" cy="288" r="16" fill="#ffffff" fill-opacity="0.92" />
+  <path d="M280 342C280 322 292 310 308 310C324 310 336 322 336 342V362H280V342Z" fill="#ffffff" fill-opacity="0.9" />
+
+  <circle cx="250" cy="272" r="22" fill="#ffffff" />
+  <path d="M208 346C208 318 226 302 250 302C274 302 292 318 292 346V372H208V346Z" fill="#ffffff" />
+  <path
+    d="M250 356C250 356 232 342 232 330C232 323 238 318 244 318C248 318 250 321 250 323C250 321 252 318 256 318C262 318 268 323 268 330C268 342 250 356 250 356Z"
+    fill="#dc1616"
+  />
+
+  <!-- Crimson + Deep Navy Swoosh -->
+  <path
+    d="M118 246C80 304 102 384 196 404C268 418 338 394 382 348C336 382 268 396 202 382C122 364 98 302 118 246Z"
+    fill="url(#navySwoosh)"
+    stroke="#ffffff"
+    stroke-width="6"
+  />
+
+  <!-- Deep Navy Magnifying Glass with Inner Crimson Blood Drop -->
+  <path d="M402 384L448 430" stroke="#081e36" stroke-width="26" stroke-linecap="round" />
+  <circle cx="364" cy="346" r="56" fill="#ffffff" stroke="#081e36" stroke-width="20" />
+  <path
+    d="M364 314C364 314 342 343 342 360C342 372.15 351.85 382 364 382C376.15 382 386 372.15 386 360C386 343 364 314 364 314Z"
+    fill="url(#dropMain)"
+  />
+</svg>

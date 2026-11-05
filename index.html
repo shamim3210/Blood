@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <title>BloodSearch - Bangladesh Emergency Blood Network</title>
+    <meta name="description" content="Emergency blood donor finder, live hospital blood requests, compatibility guide, and 64-district voluntary donor network for Bangladesh." />
+    <meta property="og:title" content="BloodSearch - Bangladesh Emergency Blood Network" />
+    <meta property="og:description" content="Emergency blood donor finder, live hospital blood requests, compatibility guide, and 64-district voluntary donor network for Bangladesh." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/assets/aistudio/image_771fa3d8.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/assets/aistudio/image_771fa3d8.png" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="theme-color" content="#0b2239" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="BloodSearch" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        if (reason && (
+          (typeof reason.message === 'string' && (reason.message.includes('WebSocket') || reason.message.includes('ws://') || reason.message.includes('wss://'))) ||
+          (typeof reason.stack === 'string' && reason.stack.includes('@vite/client'))
+        )) {
+          event.preventDefault();
+        }
+      });
+    </script>
+  </head>
+  <body class="antialiased selection:bg-rose-500 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

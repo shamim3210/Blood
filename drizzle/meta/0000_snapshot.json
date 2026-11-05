@@ -1,0 +1,4906 @@
+{
+  "id": "11a66e5c-ca47-41d2-b012-18edc44bfc40",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.admin_roles": {
+      "name": "admin_roles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permissions_json": {
+          "name": "permissions_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "granted_by_uid": {
+          "name": "granted_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_by_uid": {
+          "name": "revoked_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_admin_roles_user_uid": {
+          "name": "uq_admin_roles_user_uid",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_admin_roles_active_role": {
+          "name": "idx_admin_roles_active_role",
+          "columns": [
+            {
+              "expression": "is_active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "admin_roles_user_uid_users_uid_fk": {
+          "name": "admin_roles_user_uid_users_uid_fk",
+          "tableFrom": "admin_roles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "admin_roles_granted_by_uid_users_uid_fk": {
+          "name": "admin_roles_granted_by_uid_users_uid_fk",
+          "tableFrom": "admin_roles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "granted_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "admin_roles_revoked_by_uid_users_uid_fk": {
+          "name": "admin_roles_revoked_by_uid_users_uid_fk",
+          "tableFrom": "admin_roles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "revoked_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_admin_role_type": {
+          "name": "chk_admin_role_type",
+          "value": "\"admin_roles\".\"role\" IN ('SUPER_ADMIN', 'CO_ADMIN', 'MODERATOR')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.announcements": {
+      "name": "announcements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "announcement_type": {
+          "name": "announcement_type",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'BROADCAST'"
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(220)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'INFO'"
+        },
+        "target_version": {
+          "name": "target_version",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apk_download_url": {
+          "name": "apk_download_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "force_update": {
+          "name": "force_update",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "author_uid": {
+          "name": "author_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_announcements_active_type_created": {
+          "name": "idx_announcements_active_type_created",
+          "columns": [
+            {
+              "expression": "is_active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "announcement_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "announcements_author_uid_users_uid_fk": {
+          "name": "announcements_author_uid_users_uid_fk",
+          "tableFrom": "announcements",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_announcements_priority": {
+          "name": "chk_announcements_priority",
+          "value": "\"announcements\".\"priority\" IN ('INFO', 'WARNING', 'CRITICAL')"
+        },
+        "chk_announcements_type": {
+          "name": "chk_announcements_type",
+          "value": "\"announcements\".\"announcement_type\" IN ('BROADCAST', 'OTA_APP_UPDATE')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "actor_uid": {
+          "name": "actor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_role": {
+          "name": "actor_role",
+          "type": "varchar(28)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'USER'"
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_entity_type": {
+          "name": "target_entity_type",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_entity_id": {
+          "name": "target_entity_id",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SUCCESS'"
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details_json": {
+          "name": "details_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_audit_logs_actor_created": {
+          "name": "idx_audit_logs_actor_created",
+          "columns": [
+            {
+              "expression": "actor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_audit_logs_action_outcome": {
+          "name": "idx_audit_logs_action_outcome",
+          "columns": [
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "outcome",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_audit_logs_target": {
+          "name": "idx_audit_logs_target",
+          "columns": [
+            {
+              "expression": "target_entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_audit_outcome": {
+          "name": "chk_audit_outcome",
+          "value": "\"audit_logs\".\"outcome\" IN ('SUCCESS', 'DENIED', 'ERROR')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.auth_identities": {
+      "name": "auth_identities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_subject": {
+          "name": "provider_subject",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_login_count": {
+          "name": "failed_login_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_reset_token_hash": {
+          "name": "password_reset_token_hash",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_reset_expires_at": {
+          "name": "password_reset_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_auth_identities_provider_sub": {
+          "name": "uq_auth_identities_provider_sub",
+          "columns": [
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider_subject",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_auth_identities_user_uid": {
+          "name": "idx_auth_identities_user_uid",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_auth_identities_reset_hash": {
+          "name": "idx_auth_identities_reset_hash",
+          "columns": [
+            {
+              "expression": "password_reset_token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "auth_identities_user_uid_users_uid_fk": {
+          "name": "auth_identities_user_uid_users_uid_fk",
+          "tableFrom": "auth_identities",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_auth_provider_type": {
+          "name": "chk_auth_provider_type",
+          "value": "\"auth_identities\".\"provider\" IN ('GOOGLE_OIDC', 'EMAIL_PASSWORD', 'PHONE_OTP')"
+        },
+        "chk_auth_failed_non_negative": {
+          "name": "chk_auth_failed_non_negative",
+          "value": "\"auth_identities\".\"failed_login_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.blood_banks": {
+      "name": "blood_banks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hospital_id": {
+          "name": "hospital_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact_phone": {
+          "name": "contact_phone",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "license_number": {
+          "name": "license_number",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_24_hours": {
+          "name": "is_24_hours",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_verified": {
+          "name": "is_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_blood_banks_code": {
+          "name": "uq_blood_banks_code",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_blood_banks_district": {
+          "name": "idx_blood_banks_district",
+          "columns": [
+            {
+              "expression": "district",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_verified",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "blood_banks_hospital_id_hospitals_id_fk": {
+          "name": "blood_banks_hospital_id_hospitals_id_fk",
+          "tableFrom": "blood_banks",
+          "tableTo": "hospitals",
+          "columnsFrom": [
+            "hospital_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.blood_inventory": {
+      "name": "blood_inventory",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "blood_bank_id": {
+          "name": "blood_bank_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "component_type": {
+          "name": "component_type",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'WHOLE_BLOOD'"
+        },
+        "units_available": {
+          "name": "units_available",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "units_reserved": {
+          "name": "units_reserved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "critical_threshold": {
+          "name": "critical_threshold",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "stock_status": {
+          "name": "stock_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ADEQUATE'"
+        },
+        "updated_by_uid": {
+          "name": "updated_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_inventory_bank_group_comp": {
+          "name": "uq_inventory_bank_group_comp",
+          "columns": [
+            {
+              "expression": "blood_bank_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "blood_group",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "component_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_inventory_group_status": {
+          "name": "idx_inventory_group_status",
+          "columns": [
+            {
+              "expression": "blood_group",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "stock_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "blood_inventory_blood_bank_id_blood_banks_id_fk": {
+          "name": "blood_inventory_blood_bank_id_blood_banks_id_fk",
+          "tableFrom": "blood_inventory",
+          "tableTo": "blood_banks",
+          "columnsFrom": [
+            "blood_bank_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "blood_inventory_updated_by_uid_users_uid_fk": {
+          "name": "blood_inventory_updated_by_uid_users_uid_fk",
+          "tableFrom": "blood_inventory",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updated_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_inventory_blood_group": {
+          "name": "chk_inventory_blood_group",
+          "value": "\"blood_inventory\".\"blood_group\" IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')"
+        },
+        "chk_inventory_units_non_negative": {
+          "name": "chk_inventory_units_non_negative",
+          "value": "\"blood_inventory\".\"units_available\" >= 0 AND \"blood_inventory\".\"units_reserved\" >= 0 AND \"blood_inventory\".\"critical_threshold\" >= 0"
+        },
+        "chk_inventory_stock_status": {
+          "name": "chk_inventory_stock_status",
+          "value": "\"blood_inventory\".\"stock_status\" IN ('ADEQUATE', 'LOW', 'CRITICAL', 'OUT_OF_STOCK')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.blood_requests": {
+      "name": "blood_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "requester_uid": {
+          "name": "requester_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_donor_uid": {
+          "name": "target_donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patient_name": {
+          "name": "patient_name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_age": {
+          "name": "patient_age",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patient_gender": {
+          "name": "patient_gender",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hemoglobin": {
+          "name": "hemoglobin",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bags_needed": {
+          "name": "bags_needed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "bags_fulfilled": {
+          "name": "bags_fulfilled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_platelet_request": {
+          "name": "is_platelet_request",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "urgency": {
+          "name": "urgency",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'URGENT'"
+        },
+        "required_window": {
+          "name": "required_window",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'IMMEDIATE'"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "hospital_id": {
+          "name": "hospital_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hospital_name": {
+          "name": "hospital_name",
+          "type": "varchar(220)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "area": {
+          "name": "area",
+          "type": "varchar(180)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "needed_at": {
+          "name": "needed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clinical_reason": {
+          "name": "clinical_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requisition_slip_verified": {
+          "name": "requisition_slip_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "hospital_slip_data_url": {
+          "name": "hospital_slip_data_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_name": {
+          "name": "contact_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_phone_private": {
+          "name": "contact_phone_private",
+          "type": "varchar(28)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "share_direct_contact": {
+          "name": "share_direct_contact",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "escalation_level": {
+          "name": "escalation_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "search_radius_km": {
+          "name": "search_radius_km",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "responders_count": {
+          "name": "responders_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "resolved_by_uid": {
+          "name": "resolved_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution_reason": {
+          "name": "resolution_reason",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_requests_status_bg_district": {
+          "name": "idx_requests_status_bg_district",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "blood_group",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "district",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_requests_requester_created": {
+          "name": "idx_requests_requester_created",
+          "columns": [
+            {
+              "expression": "requester_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_requests_geo": {
+          "name": "idx_requests_geo",
+          "columns": [
+            {
+              "expression": "latitude",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "longitude",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_requests_expires": {
+          "name": "idx_requests_expires",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "blood_requests_requester_uid_users_uid_fk": {
+          "name": "blood_requests_requester_uid_users_uid_fk",
+          "tableFrom": "blood_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requester_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "blood_requests_target_donor_uid_users_uid_fk": {
+          "name": "blood_requests_target_donor_uid_users_uid_fk",
+          "tableFrom": "blood_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "target_donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "blood_requests_hospital_id_hospitals_id_fk": {
+          "name": "blood_requests_hospital_id_hospitals_id_fk",
+          "tableFrom": "blood_requests",
+          "tableTo": "hospitals",
+          "columnsFrom": [
+            "hospital_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "blood_requests_resolved_by_uid_users_uid_fk": {
+          "name": "blood_requests_resolved_by_uid_users_uid_fk",
+          "tableFrom": "blood_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "resolved_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_request_blood_group": {
+          "name": "chk_request_blood_group",
+          "value": "\"blood_requests\".\"blood_group\" IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')"
+        },
+        "chk_request_urgency": {
+          "name": "chk_request_urgency",
+          "value": "\"blood_requests\".\"urgency\" IN ('CRITICAL', 'URGENT', 'STANDARD')"
+        },
+        "chk_request_status": {
+          "name": "chk_request_status",
+          "value": "\"blood_requests\".\"status\" IN ('ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED')"
+        },
+        "chk_request_bags_range": {
+          "name": "chk_request_bags_range",
+          "value": "\"blood_requests\".\"bags_needed\" >= 1 AND \"blood_requests\".\"bags_needed\" <= 20 AND \"blood_requests\".\"bags_fulfilled\" >= 0"
+        },
+        "chk_request_escalation_range": {
+          "name": "chk_request_escalation_range",
+          "value": "\"blood_requests\".\"escalation_level\" >= 0 AND \"blood_requests\".\"escalation_level\" <= 4"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.community_messages": {
+      "name": "community_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "sender_uid": {
+          "name": "sender_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_name": {
+          "name": "sender_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_avatar": {
+          "name": "sender_avatar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sender_role": {
+          "name": "sender_role",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'DONOR'"
+        },
+        "is_verified_donor": {
+          "name": "is_verified_donor",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sender_blood_group": {
+          "name": "sender_blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_text": {
+          "name": "message_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attachment_type": {
+          "name": "attachment_type",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachment_json": {
+          "name": "attachment_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reply_to_id": {
+          "name": "reply_to_id",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reply_to_name": {
+          "name": "reply_to_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reply_to_text": {
+          "name": "reply_to_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reactions_json": {
+          "name": "reactions_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_community_msg_created": {
+          "name": "idx_community_msg_created",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_community_msg_district": {
+          "name": "idx_community_msg_district",
+          "columns": [
+            {
+              "expression": "district",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "community_messages_sender_uid_users_uid_fk": {
+          "name": "community_messages_sender_uid_users_uid_fk",
+          "tableFrom": "community_messages",
+          "tableTo": "users",
+          "columnsFrom": [
+            "sender_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contact_requests": {
+      "name": "contact_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "requester_uid": {
+          "name": "requester_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requester_name": {
+          "name": "requester_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_uid": {
+          "name": "donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_name": {
+          "name": "donor_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "related_request_id": {
+          "name": "related_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel_requested": {
+          "name": "channel_requested",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ALL'"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "responded_at": {
+          "name": "responded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_contact_requests_donor_status": {
+          "name": "idx_contact_requests_donor_status",
+          "columns": [
+            {
+              "expression": "donor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_contact_requests_requester_donor": {
+          "name": "idx_contact_requests_requester_donor",
+          "columns": [
+            {
+              "expression": "requester_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "donor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contact_requests_requester_uid_users_uid_fk": {
+          "name": "contact_requests_requester_uid_users_uid_fk",
+          "tableFrom": "contact_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requester_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "contact_requests_donor_uid_users_uid_fk": {
+          "name": "contact_requests_donor_uid_users_uid_fk",
+          "tableFrom": "contact_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "contact_requests_related_request_id_blood_requests_id_fk": {
+          "name": "contact_requests_related_request_id_blood_requests_id_fk",
+          "tableFrom": "contact_requests",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "related_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_contact_requests_status": {
+          "name": "chk_contact_requests_status",
+          "value": "\"contact_requests\".\"status\" IN ('PENDING', 'APPROVED', 'DENIED', 'REVOKED', 'EXPIRED')"
+        },
+        "chk_contact_requests_channel": {
+          "name": "chk_contact_requests_channel",
+          "value": "\"contact_requests\".\"channel_requested\" IN ('CALL', 'SMS', 'WHATSAPP', 'FACEBOOK', 'ALL')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.device_tokens": {
+      "name": "device_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "push_token": {
+          "name": "push_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'WEB_PWA'"
+        },
+        "device_label": {
+          "name": "device_label",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_device_tokens_push": {
+          "name": "uq_device_tokens_push",
+          "columns": [
+            {
+              "expression": "push_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_device_tokens_user_active": {
+          "name": "idx_device_tokens_user_active",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "device_tokens_user_uid_users_uid_fk": {
+          "name": "device_tokens_user_uid_users_uid_fk",
+          "tableFrom": "device_tokens",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_device_platform": {
+          "name": "chk_device_platform",
+          "value": "\"device_tokens\".\"platform\" IN ('WEB_PWA', 'ANDROID_APK', 'IOS_WEB')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.direct_messages": {
+      "name": "direct_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "room_id": {
+          "name": "room_id",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_uid": {
+          "name": "sender_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_name": {
+          "name": "sender_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sender_blood_group": {
+          "name": "sender_blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_text": {
+          "name": "message_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attachment_type": {
+          "name": "attachment_type",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata_json": {
+          "name": "metadata_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_direct_msg_room_created": {
+          "name": "idx_direct_msg_room_created",
+          "columns": [
+            {
+              "expression": "room_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "direct_messages_room_id_direct_chat_rooms_id_fk": {
+          "name": "direct_messages_room_id_direct_chat_rooms_id_fk",
+          "tableFrom": "direct_messages",
+          "tableTo": "direct_chat_rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "direct_messages_sender_uid_users_uid_fk": {
+          "name": "direct_messages_sender_uid_users_uid_fk",
+          "tableFrom": "direct_messages",
+          "tableTo": "users",
+          "columnsFrom": [
+            "sender_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.direct_chat_rooms": {
+      "name": "direct_chat_rooms",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(160)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "participant_one_uid": {
+          "name": "participant_one_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_two_uid": {
+          "name": "participant_two_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_names_json": {
+          "name": "participant_names_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "participant_avatars_json": {
+          "name": "participant_avatars_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "participant_blood_groups_json": {
+          "name": "participant_blood_groups_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "related_request_id": {
+          "name": "related_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hospital_name": {
+          "name": "hospital_name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_message_preview": {
+          "name": "last_message_preview",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_sender_uid": {
+          "name": "last_sender_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_message_at": {
+          "name": "last_message_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_direct_chat_p1": {
+          "name": "idx_direct_chat_p1",
+          "columns": [
+            {
+              "expression": "participant_one_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_message_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_direct_chat_p2": {
+          "name": "idx_direct_chat_p2",
+          "columns": [
+            {
+              "expression": "participant_two_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_message_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "direct_chat_rooms_participant_one_uid_users_uid_fk": {
+          "name": "direct_chat_rooms_participant_one_uid_users_uid_fk",
+          "tableFrom": "direct_chat_rooms",
+          "tableTo": "users",
+          "columnsFrom": [
+            "participant_one_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "direct_chat_rooms_participant_two_uid_users_uid_fk": {
+          "name": "direct_chat_rooms_participant_two_uid_users_uid_fk",
+          "tableFrom": "direct_chat_rooms",
+          "tableTo": "users",
+          "columnsFrom": [
+            "participant_two_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "direct_chat_rooms_related_request_id_blood_requests_id_fk": {
+          "name": "direct_chat_rooms_related_request_id_blood_requests_id_fk",
+          "tableFrom": "direct_chat_rooms",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "related_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.donations": {
+      "name": "donations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "donor_uid": {
+          "name": "donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hospital_id": {
+          "name": "hospital_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hospital_name": {
+          "name": "hospital_name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "units_donated": {
+          "name": "units_donated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "donated_at": {
+          "name": "donated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "cooldown_until": {
+          "name": "cooldown_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified_by_uid": {
+          "name": "verified_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "certificate_code": {
+          "name": "certificate_code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_donations_certificate_code": {
+          "name": "uq_donations_certificate_code",
+          "columns": [
+            {
+              "expression": "certificate_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_donations_donor_date": {
+          "name": "idx_donations_donor_date",
+          "columns": [
+            {
+              "expression": "donor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "donated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_donations_request": {
+          "name": "idx_donations_request",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "donations_donor_uid_users_uid_fk": {
+          "name": "donations_donor_uid_users_uid_fk",
+          "tableFrom": "donations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "donations_request_id_blood_requests_id_fk": {
+          "name": "donations_request_id_blood_requests_id_fk",
+          "tableFrom": "donations",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "donations_hospital_id_hospitals_id_fk": {
+          "name": "donations_hospital_id_hospitals_id_fk",
+          "tableFrom": "donations",
+          "tableTo": "hospitals",
+          "columnsFrom": [
+            "hospital_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "donations_verified_by_uid_users_uid_fk": {
+          "name": "donations_verified_by_uid_users_uid_fk",
+          "tableFrom": "donations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "verified_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_donations_blood_group": {
+          "name": "chk_donations_blood_group",
+          "value": "\"donations\".\"blood_group\" IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')"
+        },
+        "chk_donations_units": {
+          "name": "chk_donations_units",
+          "value": "\"donations\".\"units_donated\" >= 1 AND \"donations\".\"units_donated\" <= 4"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.donor_profiles": {
+      "name": "donor_profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_smart_id": {
+          "name": "donor_smart_id",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_name": {
+          "name": "public_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "age": {
+          "name": "age",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gender": {
+          "name": "gender",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weight_kg": {
+          "name": "weight_kg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "upazila": {
+          "name": "upazila",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "area": {
+          "name": "area",
+          "type": "varchar(180)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability_status": {
+          "name": "availability_status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AVAILABLE'"
+        },
+        "is_available": {
+          "name": "is_available",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "last_donation_date": {
+          "name": "last_donation_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "next_eligible_date": {
+          "name": "next_eligible_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_donations": {
+          "name": "total_donations",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_verified": {
+          "name": "is_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "medical_declaration_accepted": {
+          "name": "medical_declaration_accepted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "share_direct_contact": {
+          "name": "share_direct_contact",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "contact_preference": {
+          "name": "contact_preference",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'IN_APP_ONLY'"
+        },
+        "masked_phone_hint": {
+          "name": "masked_phone_hint",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_whatsapp": {
+          "name": "has_whatsapp",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "has_facebook": {
+          "name": "has_facebook",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "rating": {
+          "name": "rating",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "response_rate_percent": {
+          "name": "response_rate_percent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 100
+        },
+        "avg_response_minutes": {
+          "name": "avg_response_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_availability_confirmed_at": {
+          "name": "last_availability_confirmed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_donor_profiles_user_uid": {
+          "name": "uq_donor_profiles_user_uid",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_donor_profiles_smart_id": {
+          "name": "uq_donor_profiles_smart_id",
+          "columns": [
+            {
+              "expression": "donor_smart_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_donor_search_bg_dist_avail": {
+          "name": "idx_donor_search_bg_dist_avail",
+          "columns": [
+            {
+              "expression": "blood_group",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "district",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_available",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_donor_geo_lat_lng": {
+          "name": "idx_donor_geo_lat_lng",
+          "columns": [
+            {
+              "expression": "latitude",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "longitude",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_donor_verified_donations": {
+          "name": "idx_donor_verified_donations",
+          "columns": [
+            {
+              "expression": "is_verified",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "total_donations",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "donor_profiles_user_uid_users_uid_fk": {
+          "name": "donor_profiles_user_uid_users_uid_fk",
+          "tableFrom": "donor_profiles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_donor_blood_group": {
+          "name": "chk_donor_blood_group",
+          "value": "\"donor_profiles\".\"blood_group\" IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')"
+        },
+        "chk_donor_age_range": {
+          "name": "chk_donor_age_range",
+          "value": "\"donor_profiles\".\"age\" IS NULL OR (\"donor_profiles\".\"age\" >= 18 AND \"donor_profiles\".\"age\" <= 65)"
+        },
+        "chk_donor_lat_range": {
+          "name": "chk_donor_lat_range",
+          "value": "\"donor_profiles\".\"latitude\" IS NULL OR (\"donor_profiles\".\"latitude\" >= -90 AND \"donor_profiles\".\"latitude\" <= 90)"
+        },
+        "chk_donor_lng_range": {
+          "name": "chk_donor_lng_range",
+          "value": "\"donor_profiles\".\"longitude\" IS NULL OR (\"donor_profiles\".\"longitude\" >= -180 AND \"donor_profiles\".\"longitude\" <= 180)"
+        },
+        "chk_donor_availability_status": {
+          "name": "chk_donor_availability_status",
+          "value": "\"donor_profiles\".\"availability_status\" IN ('AVAILABLE', 'BUSY', 'OFFLINE', 'COOLDOWN')"
+        },
+        "chk_donor_contact_preference": {
+          "name": "chk_donor_contact_preference",
+          "value": "\"donor_profiles\".\"contact_preference\" IN ('CALL_ALLOWED', 'WHATSAPP_ONLY', 'IN_APP_ONLY', 'DND')"
+        },
+        "chk_donor_total_donations": {
+          "name": "chk_donor_total_donations",
+          "value": "\"donor_profiles\".\"total_donations\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.emergency_alerts": {
+      "name": "emergency_alerts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_donor_uid": {
+          "name": "target_donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "escalation_level": {
+          "name": "escalation_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "radius_km": {
+          "name": "radius_km",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "channel": {
+          "name": "channel",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'IN_APP'"
+        },
+        "alert_state": {
+          "name": "alert_state",
+          "type": "varchar(28)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DISPATCHED'"
+        },
+        "retry_count": {
+          "name": "retry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dispatched_at": {
+          "name": "dispatched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "acknowledged_at": {
+          "name": "acknowledged_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stopped_at": {
+          "name": "stopped_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_emergency_alerts_request_state": {
+          "name": "idx_emergency_alerts_request_state",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "alert_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_emergency_alerts_donor_state": {
+          "name": "idx_emergency_alerts_donor_state",
+          "columns": [
+            {
+              "expression": "target_donor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "alert_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "emergency_alerts_request_id_blood_requests_id_fk": {
+          "name": "emergency_alerts_request_id_blood_requests_id_fk",
+          "tableFrom": "emergency_alerts",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "emergency_alerts_target_donor_uid_users_uid_fk": {
+          "name": "emergency_alerts_target_donor_uid_users_uid_fk",
+          "tableFrom": "emergency_alerts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "target_donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_emergency_alert_channel": {
+          "name": "chk_emergency_alert_channel",
+          "value": "\"emergency_alerts\".\"channel\" IN ('IN_APP', 'WEB_PUSH', 'SMS_FALLBACK')"
+        },
+        "chk_emergency_alert_state": {
+          "name": "chk_emergency_alert_state",
+          "value": "\"emergency_alerts\".\"alert_state\" IN ('DISPATCHED', 'DELIVERED', 'FAILED_RETRYABLE', 'ACKNOWLEDGED', 'STOPPED_RESOLVED', 'EXPIRED')"
+        },
+        "chk_emergency_alert_retries": {
+          "name": "chk_emergency_alert_retries",
+          "value": "\"emergency_alerts\".\"retry_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.gratitude_notes": {
+      "name": "gratitude_notes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "author_uid": {
+          "name": "author_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_name": {
+          "name": "author_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "honored_donor_uid": {
+          "name": "honored_donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "honored_donor_name": {
+          "name": "honored_donor_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_gratitude_notes_created": {
+          "name": "idx_gratitude_notes_created",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "gratitude_notes_author_uid_users_uid_fk": {
+          "name": "gratitude_notes_author_uid_users_uid_fk",
+          "tableFrom": "gratitude_notes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "gratitude_notes_honored_donor_uid_users_uid_fk": {
+          "name": "gratitude_notes_honored_donor_uid_users_uid_fk",
+          "tableFrom": "gratitude_notes",
+          "tableTo": "users",
+          "columnsFrom": [
+            "honored_donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hospitals": {
+      "name": "hospitals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_en": {
+          "name": "name_en",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_bn": {
+          "name": "name_bn",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "upazila": {
+          "name": "upazila",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emergency_phone": {
+          "name": "emergency_phone",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_bank_phone": {
+          "name": "blood_bank_phone",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hospital_type": {
+          "name": "hospital_type",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GOVERNMENT'"
+        },
+        "has_blood_bank": {
+          "name": "has_blood_bank",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_verified": {
+          "name": "is_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_hospitals_slug": {
+          "name": "uq_hospitals_slug",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_hospitals_district": {
+          "name": "idx_hospitals_district",
+          "columns": [
+            {
+              "expression": "district",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_verified",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_hospitals_geo": {
+          "name": "idx_hospitals_geo",
+          "columns": [
+            {
+              "expression": "latitude",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "longitude",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_hospitals_type": {
+          "name": "chk_hospitals_type",
+          "value": "\"hospitals\".\"hospital_type\" IN ('GOVERNMENT', 'PRIVATE', 'MEDICAL_COLLEGE', 'SPECIALIZED', 'NON_PROFIT')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.live_donor_trips": {
+      "name": "live_donor_trips",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_uid": {
+          "name": "donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requester_uid": {
+          "name": "requester_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_name": {
+          "name": "donor_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_lat": {
+          "name": "current_lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_lng": {
+          "name": "current_lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hospital_lat": {
+          "name": "hospital_lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hospital_lng": {
+          "name": "hospital_lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eta_minutes": {
+          "name": "eta_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "distance_km": {
+          "name": "distance_km",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trip_status": {
+          "name": "trip_status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'EN_ROUTE'"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_live_trips_request_status": {
+          "name": "idx_live_trips_request_status",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "trip_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_live_trips_donor_status": {
+          "name": "idx_live_trips_donor_status",
+          "columns": [
+            {
+              "expression": "donor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "trip_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "live_donor_trips_request_id_blood_requests_id_fk": {
+          "name": "live_donor_trips_request_id_blood_requests_id_fk",
+          "tableFrom": "live_donor_trips",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "live_donor_trips_donor_uid_users_uid_fk": {
+          "name": "live_donor_trips_donor_uid_users_uid_fk",
+          "tableFrom": "live_donor_trips",
+          "tableTo": "users",
+          "columnsFrom": [
+            "donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "live_donor_trips_requester_uid_users_uid_fk": {
+          "name": "live_donor_trips_requester_uid_users_uid_fk",
+          "tableFrom": "live_donor_trips",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requester_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_live_trips_status": {
+          "name": "chk_live_trips_status",
+          "value": "\"live_donor_trips\".\"trip_status\" IN ('EN_ROUTE', 'ARRIVED', 'COMPLETED', 'STOPPED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.login_sessions": {
+      "name": "login_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session_token_hash": {
+          "name": "session_token_hash",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "csrf_token_hash": {
+          "name": "csrf_token_hash",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_method": {
+          "name": "auth_method",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_agent_summary": {
+          "name": "user_agent_summary",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_admin_console": {
+          "name": "is_admin_console",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_revoked": {
+          "name": "is_revoked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "revoked_reason": {
+          "name": "revoked_reason",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rotated_from_session_id": {
+          "name": "rotated_from_session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_active_at": {
+          "name": "last_active_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_login_sessions_token_hash": {
+          "name": "uq_login_sessions_token_hash",
+          "columns": [
+            {
+              "expression": "session_token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_login_sessions_user_active": {
+          "name": "idx_login_sessions_user_active",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_revoked",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "login_sessions_user_uid_users_uid_fk": {
+          "name": "login_sessions_user_uid_users_uid_fk",
+          "tableFrom": "login_sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "recipient_uid": {
+          "name": "recipient_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notification_type": {
+          "name": "notification_type",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "related_request_id": {
+          "name": "related_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delivery_status": {
+          "name": "delivery_status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DELIVERED'"
+        },
+        "retry_count": {
+          "name": "retry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata_json": {
+          "name": "metadata_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_notifications_recipient_unread": {
+          "name": "idx_notifications_recipient_unread",
+          "columns": [
+            {
+              "expression": "recipient_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_read",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_notifications_delivery_retry": {
+          "name": "idx_notifications_delivery_retry",
+          "columns": [
+            {
+              "expression": "delivery_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "retry_count",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notifications_recipient_uid_users_uid_fk": {
+          "name": "notifications_recipient_uid_users_uid_fk",
+          "tableFrom": "notifications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "recipient_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "notifications_related_request_id_blood_requests_id_fk": {
+          "name": "notifications_related_request_id_blood_requests_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "related_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_notifications_delivery_status": {
+          "name": "chk_notifications_delivery_status",
+          "value": "\"notifications\".\"delivery_status\" IN ('DELIVERED', 'FAILED_RETRYABLE', 'RETRIED_DELIVERED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.oidc_nonces": {
+      "name": "oidc_nonces",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nonce_hash": {
+          "name": "nonce_hash",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state_hash": {
+          "name": "state_hash",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redirect_origin": {
+          "name": "redirect_origin",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_consumed": {
+          "name": "is_consumed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_oidc_nonces_hash": {
+          "name": "uq_oidc_nonces_hash",
+          "columns": [
+            {
+              "expression": "nonce_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_oidc_nonces_state": {
+          "name": "idx_oidc_nonces_state",
+          "columns": [
+            {
+              "expression": "state_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_consumed",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_oidc_nonces_expires": {
+          "name": "idx_oidc_nonces_expires",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.private_contacts": {
+      "name": "private_contacts",
+      "schema": "",
+      "columns": {
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "phone_e164": {
+          "name": "phone_e164",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "whatsapp_number": {
+          "name": "whatsapp_number",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alternate_phone": {
+          "name": "alternate_phone",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "facebook_profile_url": {
+          "name": "facebook_profile_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emergency_contact_name": {
+          "name": "emergency_contact_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emergency_contact_phone": {
+          "name": "emergency_contact_phone",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exact_street_address": {
+          "name": "exact_street_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_verified": {
+          "name": "phone_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "contact_visibility": {
+          "name": "contact_visibility",
+          "type": "varchar(28)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'REQUEST_ONLY'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_private_contacts_visibility": {
+          "name": "idx_private_contacts_visibility",
+          "columns": [
+            {
+              "expression": "contact_visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "private_contacts_user_uid_users_uid_fk": {
+          "name": "private_contacts_user_uid_users_uid_fk",
+          "tableFrom": "private_contacts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_private_contact_visibility": {
+          "name": "chk_private_contact_visibility",
+          "value": "\"private_contacts\".\"contact_visibility\" IN ('PUBLIC_OPT_IN', 'REQUEST_ONLY', 'EMERGENCY_VERIFIED_ONLY', 'DND_PRIVATE')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.rate_limit_buckets": {
+      "name": "rate_limit_buckets",
+      "schema": "",
+      "columns": {
+        "bucket_key": {
+          "name": "bucket_key",
+          "type": "varchar(180)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "hit_count": {
+          "name": "hit_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "window_start": {
+          "name": "window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blocked_until": {
+          "name": "blocked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_rate_limit_expires": {
+          "name": "idx_rate_limit_expires",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_rate_limit_hits": {
+          "name": "chk_rate_limit_hits",
+          "value": "\"rate_limit_buckets\".\"hit_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reports": {
+      "name": "reports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reporter_uid": {
+          "name": "reporter_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reporter_name": {
+          "name": "reporter_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accused_uid": {
+          "name": "accused_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accused_name": {
+          "name": "accused_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accused_phone_hash": {
+          "name": "accused_phone_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ILLEGAL_MONEY_DEMAND'"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'OPEN'"
+        },
+        "resolution_note": {
+          "name": "resolution_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by_uid": {
+          "name": "reviewed_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_reports_status_created": {
+          "name": "idx_reports_status_created",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reports_reporter_uid_users_uid_fk": {
+          "name": "reports_reporter_uid_users_uid_fk",
+          "tableFrom": "reports",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reporter_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "reports_accused_uid_users_uid_fk": {
+          "name": "reports_accused_uid_users_uid_fk",
+          "tableFrom": "reports",
+          "tableTo": "users",
+          "columnsFrom": [
+            "accused_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "reports_reviewed_by_uid_users_uid_fk": {
+          "name": "reports_reviewed_by_uid_users_uid_fk",
+          "tableFrom": "reports",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewed_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_reports_status": {
+          "name": "chk_reports_status",
+          "value": "\"reports\".\"status\" IN ('OPEN', 'UNDER_REVIEW', 'ACTION_TAKEN', 'DISMISSED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.request_responses": {
+      "name": "request_responses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_uid": {
+          "name": "donor_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_name": {
+          "name": "donor_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donor_blood_group": {
+          "name": "donor_blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response_status": {
+          "name": "response_status",
+          "type": "varchar(28)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACCEPTED'"
+        },
+        "eta_minutes": {
+          "name": "eta_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donor_latitude": {
+          "name": "donor_latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donor_longitude": {
+          "name": "donor_longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responded_at": {
+          "name": "responded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_request_donor_response": {
+          "name": "uq_request_donor_response",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "donor_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_responses_request_status": {
+          "name": "idx_responses_request_status",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "response_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "request_responses_request_id_blood_requests_id_fk": {
+          "name": "request_responses_request_id_blood_requests_id_fk",
+          "tableFrom": "request_responses",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "request_responses_donor_uid_users_uid_fk": {
+          "name": "request_responses_donor_uid_users_uid_fk",
+          "tableFrom": "request_responses",
+          "tableTo": "users",
+          "columnsFrom": [
+            "donor_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_response_status": {
+          "name": "chk_response_status",
+          "value": "\"request_responses\".\"response_status\" IN ('ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'DONATED', 'DECLINED', 'CANCELLED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.user_consents": {
+      "name": "user_consents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "counterparty_uid": {
+          "name": "counterparty_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "related_request_id": {
+          "name": "related_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consent_type": {
+          "name": "consent_type",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GRANTED'"
+        },
+        "policy_version": {
+          "name": "policy_version",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'3.0.0'"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "granted_at": {
+          "name": "granted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_user_consents_owner_type": {
+          "name": "idx_user_consents_owner_type",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "consent_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_user_consents_counterparty": {
+          "name": "idx_user_consents_counterparty",
+          "columns": [
+            {
+              "expression": "counterparty_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_consents_user_uid_users_uid_fk": {
+          "name": "user_consents_user_uid_users_uid_fk",
+          "tableFrom": "user_consents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_consents_counterparty_uid_users_uid_fk": {
+          "name": "user_consents_counterparty_uid_users_uid_fk",
+          "tableFrom": "user_consents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "counterparty_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_consents_related_request_id_blood_requests_id_fk": {
+          "name": "user_consents_related_request_id_blood_requests_id_fk",
+          "tableFrom": "user_consents",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "related_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_user_consent_status": {
+          "name": "chk_user_consent_status",
+          "value": "\"user_consents\".\"status\" IN ('PENDING', 'GRANTED', 'DENIED', 'REVOKED', 'EXPIRED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "uid": {
+          "name": "uid",
+          "type": "varchar(128)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "phone_hint": {
+          "name": "phone_hint",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar(140)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "photo_url": {
+          "name": "photo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_group": {
+          "name": "blood_group",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "area": {
+          "name": "area",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_status": {
+          "name": "account_status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "auth_provider": {
+          "name": "auth_provider",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GOOGLE_OIDC'"
+        },
+        "preferred_language": {
+          "name": "preferred_language",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'bn'"
+        },
+        "family_circle_json": {
+          "name": "family_circle_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_users_email_lower": {
+          "name": "uq_users_email_lower",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_users_district_status": {
+          "name": "idx_users_district_status",
+          "columns": [
+            {
+              "expression": "district",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_users_blood_group": {
+          "name": "chk_users_blood_group",
+          "value": "\"users\".\"blood_group\" IS NULL OR \"users\".\"blood_group\" IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')"
+        },
+        "chk_users_account_status": {
+          "name": "chk_users_account_status",
+          "value": "\"users\".\"account_status\" IN ('ACTIVE', 'SUSPENDED', 'DELETED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.verification_records": {
+      "name": "verification_records",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subject_uid": {
+          "name": "subject_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "related_request_id": {
+          "name": "related_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verification_type": {
+          "name": "verification_type",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(24)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "proof_hash": {
+          "name": "proof_hash",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "evidence_summary": {
+          "name": "evidence_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by_uid": {
+          "name": "reviewed_by_uid",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_verification_proof_hash": {
+          "name": "uq_verification_proof_hash",
+          "columns": [
+            {
+              "expression": "proof_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_verification_subject_type": {
+          "name": "idx_verification_subject_type",
+          "columns": [
+            {
+              "expression": "subject_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "verification_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "verification_records_subject_uid_users_uid_fk": {
+          "name": "verification_records_subject_uid_users_uid_fk",
+          "tableFrom": "verification_records",
+          "tableTo": "users",
+          "columnsFrom": [
+            "subject_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "verification_records_related_request_id_blood_requests_id_fk": {
+          "name": "verification_records_related_request_id_blood_requests_id_fk",
+          "tableFrom": "verification_records",
+          "tableTo": "blood_requests",
+          "columnsFrom": [
+            "related_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "verification_records_reviewed_by_uid_users_uid_fk": {
+          "name": "verification_records_reviewed_by_uid_users_uid_fk",
+          "tableFrom": "verification_records",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewed_by_uid"
+          ],
+          "columnsTo": [
+            "uid"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_verification_status": {
+          "name": "chk_verification_status",
+          "value": "\"verification_records\".\"status\" IN ('PENDING', 'APPROVED', 'REJECTED', 'EXPIRED', 'CONSUMED')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

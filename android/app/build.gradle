@@ -1,0 +1,73 @@
+apply plugin: 'com.android.application'
+
+def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+def keyAliasEnv = System.getenv("ANDROID_KEY_ALIAS")
+def keyPasswordEnv = System.getenv("ANDROID_KEY_PASSWORD")
+def hasReleaseKeystore = keystorePath && keystorePassword && keyAliasEnv && keyPasswordEnv && file(keystorePath).exists()
+
+android {
+    namespace = "bd.bloodsearch.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "bd.bloodsearch.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 250
+        versionName "2.5.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            release {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAliasEnv
+                keyPassword keyPasswordEnv
+                enableV1Signing true
+                enableV2Signing true
+                enableV3Signing true
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            debuggable false
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir {
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
