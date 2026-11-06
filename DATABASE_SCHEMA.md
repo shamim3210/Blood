@@ -67,4 +67,4 @@ To guarantee 100% lossless migration of all 18 existing Firestore collections wi
 2. **Manual Donor Age Constraint**: `donor_profiles.age` has no default value and enforces `age IS NULL OR (age >= 18 AND age <= 65)` — preventing underage registration and ensuring the system never invents an automatic age.
 3. **Coordinate Bounds Check**: `latitude` (`-90..90`) and `longitude` (`-180..180`) are validated both in TypeScript and via PostgreSQL `CHECK` constraints.
 4. **Non-Negative Stock Check**: `blood_inventory` enforces `units_available >= 0 AND units_reserved >= 0 AND critical_threshold >= 0`.
-5. **Append-Only Audit Trail**: `/drizzle/least_privilege_roles.sql` revokes `UPDATE`, `DELETE`, and `TRUNCATE` on `audit_logs` from the `bloodsearch_app` runtime database role.
+5. **Append-Only Audit Trail**: After applying the schema migration, `/drizzle/least_privilege_roles.sql` revokes `UPDATE`, `DELETE`, and `TRUNCATE` on `audit_logs` from the `bloodsearch_app_runtime` role.

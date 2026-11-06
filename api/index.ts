@@ -29,14 +29,15 @@ function sendSafeJsonFallback(req: IncomingMessage, res: ServerResponse) {
   const rawUrl = String(req.url || '/');
   const pathname = rawUrl.split('?')[0] || '/';
 
-  res.statusCode = 200;
+  res.statusCode = 503;
   applyFallbackSecurityHeaders(res);
 
   if (pathname.endsWith('/donors/search')) {
     res.end(
       JSON.stringify({
-        ok: true,
-        dbConfigured: false,
+        ok: false,
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'The API service is temporarily unavailable.',
         items: [],
         pagination: {
           page: 1,
@@ -56,7 +57,8 @@ function sendSafeJsonFallback(req: IncomingMessage, res: ServerResponse) {
     res.end(
       JSON.stringify({
         ok: false,
-        dbConfigured: false,
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'The API service is temporarily unavailable.',
         found: false,
         contact: null,
       })
@@ -65,6 +67,7 @@ function sendSafeJsonFallback(req: IncomingMessage, res: ServerResponse) {
   }
 
   if (pathname.endsWith('/app-version')) {
+    res.statusCode = 200;
     res.end(
       JSON.stringify({
         ok: true,
@@ -79,7 +82,9 @@ function sendSafeJsonFallback(req: IncomingMessage, res: ServerResponse) {
     res.end(
       JSON.stringify({
         ok: false,
-        status: 'UNCONFIGURED',
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'The API service is temporarily unavailable.',
+        status: 'UNAVAILABLE',
         configured: false,
         cutoverMode: 'NEON_PRIMARY',
       })

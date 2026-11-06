@@ -36,6 +36,14 @@ npm run build
 ## Documentation Index
 
 - [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — Authentication, Neon PostgreSQL, privacy vault, API WAF, and APK security controls
+- [`SECURITY_REVIEW_2026-11-06.md`](./SECURITY_REVIEW_2026-11-06.md) — Focused source security review and remaining production blockers
 - [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md) — Neon provisioning, Google OAuth setup, Cloud Run / Vercel deployment, and backup/restore
 - [`ANDROID_BUILD_GUIDE.md`](./ANDROID_BUILD_GUIDE.md) — Capacitor Android APK build, release keystore signing (`apksigner`), and Play Store AAB guide
 - [`TESTING_REPORT.md`](./TESTING_REPORT.md) — Automated security, OIDC, session, donor privacy, and APK verification results
+- [`DATABASE_ARCHITECTURE.md`](./DATABASE_ARCHITECTURE.md) — Database roles, runtime access, and migration architecture
+- [`DATABASE_SCHEMA.md`](./DATABASE_SCHEMA.md) — PostgreSQL tables, relationships, and constraints
+- [`DATABASE_MIGRATION_GUIDE.md`](./DATABASE_MIGRATION_GUIDE.md) — Schema migration and rollback guidance
+- [`NEON_SETUP_GUIDE.md`](./NEON_SETUP_GUIDE.md) — Neon project, pooled connections, and free-tier guidance
+- [`GOOGLE_OAUTH_VERCEL_SETUP.md`](./GOOGLE_OAUTH_VERCEL_SETUP.md) — Google OAuth credentials and Vercel environment setup
+- [`ENVIRONMENT_SETUP.md`](./ENVIRONMENT_SETUP.md) — Local and production environment variables
+- [`BACKUP_RECOVERY.md`](./BACKUP_RECOVERY.md) — Database backup and recovery procedures

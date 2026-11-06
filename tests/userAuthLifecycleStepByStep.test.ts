@@ -1,7 +1,8 @@
-import { describe, it } from 'node:test';
+import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ensureMainPostgresReady } from '../src/db/index';
 import {
+  hashPasswordScrypt,
   registerEmailPasswordUserTx,
   loginEmailPasswordUserTx,
 } from '../src/server/authAndSessionService';
@@ -9,10 +10,82 @@ import {
   deleteOwnUserAndDonorAccountTx,
   adminDeleteUserTx,
 } from '../src/db/repositories/bloodSearchRepo';
-import { users, authIdentities, loginSessions } from '../src/db/schema';
+import { adminRoles, users, authIdentities, loginSessions } from '../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 describe('Step-by-Step User Lifecycle Verification (Create, Login, SuperAdmin, Delete)', () => {
+  const adminEmail = 'shamimrakib015@gmail.com';
+  const adminPass = 'AdminPass2026!';
+  let previousSuperAdminEmail: string | undefined;
+
+  before(async () => {
+    previousSuperAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    process.env.SUPER_ADMIN_EMAIL = adminEmail;
+
+    const { db } = await ensureMainPostgresReady();
+    assert.ok(db, 'Database instance must be initialized');
+    const [existingOwner] = await db.select({ uid: users.uid }).from(users).where(eq(users.email, adminEmail)).limit(1);
+    const ownerUid = existingOwner?.uid || 'usr_test_super_owner';
+
+    await db
+      .insert(users)
+      .values({
+        uid: ownerUid,
+        email: adminEmail,
+        emailVerified: true,
+        displayName: 'Test Super Owner',
+        authProvider: 'EMAIL_PASSWORD',
+        accountStatus: 'ACTIVE',
+      })
+      .onConflictDoUpdate({
+        target: users.uid,
+        set: { emailVerified: true, displayName: 'Test Super Owner', accountStatus: 'ACTIVE' },
+      });
+
+    await db
+      .insert(adminRoles)
+      .values({ userUid: ownerUid, email: adminEmail, role: 'SUPER_ADMIN', isActive: true })
+      .onConflictDoUpdate({
+        target: adminRoles.userUid,
+        set: { email: adminEmail, role: 'SUPER_ADMIN', isActive: true },
+      });
+
+    const passwordHash = await hashPasswordScrypt(adminPass);
+    const [existingIdentity] = await db
+      .select({ id: authIdentities.id })
+      .from(authIdentities)
+      .where(eq(authIdentities.providerSubject, adminEmail))
+      .limit(1);
+    if (existingIdentity) {
+      await db
+        .update(authIdentities)
+        .set({
+          provider: 'EMAIL_PASSWORD',
+          userUid: ownerUid,
+          email: adminEmail,
+          emailVerified: true,
+          passwordHash,
+          failedLoginCount: 0,
+          lockedUntil: null,
+        })
+        .where(eq(authIdentities.id, existingIdentity.id));
+    } else {
+      await db.insert(authIdentities).values({
+        userUid: ownerUid,
+        provider: 'EMAIL_PASSWORD',
+        providerSubject: adminEmail,
+        email: adminEmail,
+        emailVerified: true,
+        passwordHash,
+      });
+    }
+  });
+
+  after(() => {
+    if (previousSuperAdminEmail === undefined) delete process.env.SUPER_ADMIN_EMAIL;
+    else process.env.SUPER_ADMIN_EMAIL = previousSuperAdminEmail;
+  });
+
   it('Step 1-4: Creates a fresh user, logs in with password, verifies session & credentials', async () => {
     const { db } = await ensureMainPostgresReady();
     assert.ok(db, 'Database instance must be initialized');
@@ -97,15 +170,11 @@ describe('Step-by-Step User Lifecycle Verification (Create, Login, SuperAdmin, D
     await deleteOwnUserAndDonorAccountTx(database, session.actor);
   });
 
-  it('Step 6: Super Admin shamimrakib015@gmail.com logs in and is recognized as SUPER_ADMIN', async () => {
+  it('Step 6: A provisioned Super Admin logs in and is recognized as SUPER_ADMIN', async () => {
     const { db } = await ensureMainPostgresReady();
     assert.ok(db, 'Database instance must be initialized');
     const database = db;
 
-    const adminEmail = 'shamimrakib015@gmail.com';
-    const adminPass = 'AdminPass2026!';
-
-    // Sign in or register with email/password
     const adminSession = await loginEmailPasswordUserTx(database, {
       email: adminEmail,
       password: adminPass,
@@ -134,24 +203,21 @@ describe('Step-by-Step User Lifecycle Verification (Create, Login, SuperAdmin, D
     assert.equal(shouldBeGone, undefined, 'Temp user must be deleted by admin');
   });
 
-  it('Step 7: Super Owner can log in with a new password even if previous password was different (auto-recovery)', async () => {
+  it('Step 7: A Super Owner cannot replace a password by trying a different one', async () => {
     const { db } = await ensureMainPostgresReady();
     assert.ok(db, 'Database instance must be initialized');
     const database = db;
 
-    const adminEmail = 'shamimrakib015@gmail.com';
     const brandNewPass = 'BrandNewPassword999!';
 
-    // Even if previous password was 'AdminPass2026!', typing brandNewPass recovers and logs in as SUPER_ADMIN
-    const newSession = await loginEmailPasswordUserTx(database, {
-      email: adminEmail,
-      password: brandNewPass,
-      ipHash: 'test_ip_hash',
-      userAgent: 'TestAgent/1.0',
-    });
-
-    assert.ok(newSession.sessionToken, 'Must issue new session token');
-    assert.equal(newSession.actor.role, 'SUPER_ADMIN');
-    assert.equal(newSession.userProfile.email, adminEmail);
+    await assert.rejects(
+      loginEmailPasswordUserTx(database, {
+        email: adminEmail,
+        password: brandNewPass,
+        ipHash: 'test_ip_hash',
+        userAgent: 'TestAgent/1.0',
+      }),
+      { code: 'INVALID_CREDENTIALS' }
+    );
   });
 });

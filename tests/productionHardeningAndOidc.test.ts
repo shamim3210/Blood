@@ -12,16 +12,24 @@ import { createEmergencyApiApp } from '../server';
 import { setDatabaseOverrideForTesting, type BloodSearchDatabase } from '../src/db/index';
 import * as fullSchema from '../src/db/schema';
 import {
+  adminRoles,
   authIdentities,
   loginSessions,
   users,
 } from '../src/db/schema';
+import { isTrustedGoogleOAuthPopupMessage } from '../src/services/bloodSearchService';
 import {
+  hashClientIp,
+  resolveTrustedClientIp,
   SESSION_COOKIE_NAME,
   setGoogleJwksOverrideForTesting,
   sha256Hex,
 } from '../src/server/authAndSessionService';
 import { checkDistributedRateLimit } from '../src/server/distributedRateLimiter';
+import {
+  resolveGoogleOauthClientId,
+  resolveGoogleOauthClientSecret,
+} from '../src/server/neonRoutes';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +76,9 @@ describe('BloodSearch Production Hardening: Google OIDC, Opaque Sessions, CSRF, 
   let prevSandboxFlag: string | undefined;
   let prevNodeEnv: string | undefined;
   let prevVercelEnv: string | undefined;
+  let prevAppUrl: string | undefined;
+  let prevSuperAdminEmail: string | undefined;
+  let prevAuditIpSalt: string | undefined;
 
   before(async () => {
     prevClientId = process.env.GOOGLE_CLIENT_ID;
@@ -75,9 +86,14 @@ describe('BloodSearch Production Hardening: Google OIDC, Opaque Sessions, CSRF, 
     prevSandboxFlag = process.env.BLOODSEARCH_ENABLE_AUTH_SANDBOX;
     prevNodeEnv = process.env.NODE_ENV;
     prevVercelEnv = process.env.VERCEL_ENV;
+    prevAppUrl = process.env.APP_URL;
+    prevSuperAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    prevAuditIpSalt = process.env.AUDIT_IP_SALT;
     process.env.GOOGLE_CLIENT_ID = TEST_GOOGLE_CLIENT_ID;
     delete process.env.GOOGLE_CLIENT_SECRET;
     process.env.BLOODSEARCH_ENABLE_AUTH_SANDBOX = 'true';
+    process.env.SUPER_ADMIN_EMAIL = 'shamimrakib015@gmail.com';
+    process.env.AUDIT_IP_SALT = 'integration-test-audit-ip-salt-32-bytes';
     process.env.NODE_ENV = 'test';
     delete process.env.VERCEL_ENV;
 
@@ -95,6 +111,18 @@ describe('BloodSearch Production Hardening: Google OIDC, Opaque Sessions, CSRF, 
     db = drizzlePglite(pgClient, { schema: fullSchema }) as unknown as BloodSearchDatabase;
     setDatabaseOverrideForTesting(db);
 
+    await db.insert(users).values({
+      uid: 'uid_test_super_admin',
+      email: 'shamimrakib015@gmail.com',
+      emailVerified: true,
+      displayName: 'Test Super Admin',
+    });
+    await db.insert(adminRoles).values({
+      userUid: 'uid_test_super_admin',
+      email: 'shamimrakib015@gmail.com',
+      role: 'SUPER_ADMIN',
+    });
+
     const app = createEmergencyApiApp();
     server = http.createServer(app);
     await new Promise<void>((resolve) => {
@@ -102,6 +130,61 @@ describe('BloodSearch Production Hardening: Google OIDC, Opaque Sessions, CSRF, 
     });
     const addr = server.address() as { port: number };
     baseUrl = `http://127.0.0.1:${addr.port}`;
+    process.env.APP_URL = baseUrl;
+  });
+
+  it('does not treat OAuth placeholder values as configured credentials', () => {
+    const envKeys = [
+      'GOOGLE_CLIENT_ID',
+      'VITE_GOOGLE_CLIENT_ID',
+      'OAUTH_CLIENT_ID',
+      'GOOGLE_CLIENT_SECRET',
+      'OAUTH_CLIENT_SECRET',
+    ] as const;
+    const previousValues = new Map(envKeys.map((key) => [key, process.env[key]]));
+
+    try {
+      process.env.GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_OAUTH_WEB_CLIENT_ID.apps.googleusercontent.com';
+      process.env.VITE_GOOGLE_CLIENT_ID = 'REPLACE_WITH_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com';
+      delete process.env.OAUTH_CLIENT_ID;
+      process.env.GOOGLE_CLIENT_SECRET = 'YOUR_GOOGLE_OAUTH_WEB_CLIENT_SECRET';
+      process.env.OAUTH_CLIENT_SECRET = 'GENERATE_A_SECRET';
+      assert.equal(resolveGoogleOauthClientId(), '');
+      assert.equal(resolveGoogleOauthClientSecret(), '');
+
+      process.env.VITE_GOOGLE_CLIENT_ID = TEST_GOOGLE_CLIENT_ID;
+      assert.equal(resolveGoogleOauthClientId(), TEST_GOOGLE_CLIENT_ID);
+    } finally {
+      for (const key of envKeys) {
+        const previousValue = previousValues.get(key);
+        if (previousValue === undefined) delete process.env[key];
+        else process.env[key] = previousValue;
+      }
+    }
+  });
+
+  it('trusts forwarded client IPs only from Vercel and rejects spoofed forwarded-host CORS bypasses', async () => {
+    const headers = { 'x-forwarded-for': '203.0.113.12, 198.51.100.4' };
+    assert.equal(
+      resolveTrustedClientIp(headers, '198.51.100.8', { NODE_ENV: 'production' }),
+      '198.51.100.8'
+    );
+    assert.equal(
+      resolveTrustedClientIp(headers, '198.51.100.8', { VERCEL: '1' }),
+      '203.0.113.12'
+    );
+    assert.equal(
+      resolveTrustedClientIp({ 'x-forwarded-for': 'not-an-ip' }, '198.51.100.8', { VERCEL: '1' }),
+      '198.51.100.8'
+    );
+
+    const corsBypass = await fetch(`${baseUrl}/api/v1/auth/config`, {
+      headers: {
+        Origin: 'https://attacker.example',
+        'X-Forwarded-Host': 'attacker.example',
+      },
+    });
+    assert.equal(corsBypass.status, 403);
   });
 
   after(async () => {
@@ -117,12 +200,44 @@ describe('BloodSearch Production Hardening: Google OIDC, Opaque Sessions, CSRF, 
     else process.env.NODE_ENV = prevNodeEnv;
     if (prevVercelEnv === undefined) delete process.env.VERCEL_ENV;
     else process.env.VERCEL_ENV = prevVercelEnv;
+    if (prevAppUrl === undefined) delete process.env.APP_URL;
+    else process.env.APP_URL = prevAppUrl;
+    if (prevSuperAdminEmail === undefined) delete process.env.SUPER_ADMIN_EMAIL;
+    else process.env.SUPER_ADMIN_EMAIL = prevSuperAdminEmail;
+    if (prevAuditIpSalt === undefined) delete process.env.AUDIT_IP_SALT;
+    else process.env.AUDIT_IP_SALT = prevAuditIpSalt;
     server.closeAllConnections?.();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await pgClient.close();
   });
 
   it('1. Verifies Google OIDC RS256 ID tokens, enforces iss/aud/exp/email_verified, blocks nonce replay, and stores SHA-256 session hash', async () => {
+    const expectedIpHash = crypto
+      .createHmac('sha256', 'integration-test-audit-ip-salt-32-bytes')
+      .update('IP:198.51.100.10', 'utf8')
+      .digest('hex')
+      .slice(0, 32);
+    assert.equal(hashClientIp('198.51.100.10'), expectedIpHash);
+
+    const popupSource = {};
+    assert.equal(
+      isTrustedGoogleOAuthPopupMessage(baseUrl, popupSource, popupSource, baseUrl),
+      true
+    );
+    assert.equal(
+      isTrustedGoogleOAuthPopupMessage('https://attacker.example', popupSource, popupSource, baseUrl),
+      false
+    );
+    assert.equal(
+      isTrustedGoogleOAuthPopupMessage(baseUrl, {}, popupSource, baseUrl),
+      false
+    );
+
+    const callbackErrorRes = await fetch(`${baseUrl}/auth/callback?error=access_denied`);
+    const callbackErrorHtml = await callbackErrorRes.text();
+    assert.ok(callbackErrorHtml.includes(`window.opener.postMessage(msg, "${baseUrl}")`));
+    assert.equal(callbackErrorHtml.includes("postMessage(msg, '*')"), false);
+
     const nonceRes = await fetch(`${baseUrl}/api/v1/auth/google/nonce`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -237,6 +352,37 @@ describe('BloodSearch Production Hardening: Google OIDC, Opaque Sessions, CSRF, 
     assert.equal(sessionRows.length, 1);
     assert.equal(sessionRows[0]!.sessionTokenHash, sha256Hex(okJson.sessionToken));
     assert.equal(JSON.stringify(sessionRows).includes(okJson.sessionToken), false);
+
+    const takeoverRegisterRes = await fetch(`${baseUrl}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'alice.oidc@bloodsearch.org',
+        password: 'AttackerPassword123!',
+        displayName: 'Attacker',
+      }),
+    });
+    assert.equal(takeoverRegisterRes.status, 409);
+
+    const takeoverLoginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'alice.oidc@bloodsearch.org',
+        password: 'AttackerPassword123!',
+      }),
+    });
+    assert.equal(takeoverLoginRes.status, 401);
+    const [linkedPasswordIdentity] = await db
+      .select()
+      .from(authIdentities)
+      .where(
+        and(
+          eq(authIdentities.provider, 'EMAIL_PASSWORD'),
+          eq(authIdentities.providerSubject, 'alice.oidc@bloodsearch.org')
+        )
+      );
+    assert.equal(linkedPasswordIdentity, undefined);
 
     const replayRes = await fetch(`${baseUrl}/api/v1/auth/google`, {
       method: 'POST',

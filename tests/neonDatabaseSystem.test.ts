@@ -21,13 +21,17 @@ import { evaluateNeonHealthAndLimits, resetPostgisCacheForTesting } from '../src
 import type { AuthenticatedActor } from '../src/db/repositories/bloodSearchRepo';
 import {
   ALL_BLOODSEARCH_TABLES,
+  adminRoles,
   auditLogs,
   CORE_REQUIRED_TABLES,
   donations,
   donorProfiles,
   emergencyAlerts,
+  users,
 } from '../src/db/schema';
 import * as fullSchema from '../src/db/schema';
+
+process.env.NODE_ENV = 'test';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,8 +103,11 @@ describe('BloodSearch Neon PostgreSQL Architecture, Security, Migration & Backup
   let db: BloodSearchDatabase;
   let server: http.Server;
   let baseUrl = '';
+  let previousSuperAdminEmail: string | undefined;
 
   before(async () => {
+    previousSuperAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    process.env.SUPER_ADMIN_EMAIL = 'shamimrakib015@gmail.com';
     resetPostgisCacheForTesting();
     pgClient = new PGlite();
     const ddlSql = findCoreMigrationSql();
@@ -109,6 +116,18 @@ describe('BloodSearch Neon PostgreSQL Architecture, Security, Migration & Backup
 
     db = drizzlePglite(pgClient, { schema: fullSchema }) as unknown as BloodSearchDatabase;
     setDatabaseOverrideForTesting(db);
+
+    await db.insert(users).values({
+      uid: 'uid_super_owner_01',
+      email: 'shamimrakib015@gmail.com',
+      emailVerified: true,
+      displayName: 'Test Super Owner',
+    });
+    await db.insert(adminRoles).values({
+      userUid: 'uid_super_owner_01',
+      email: 'shamimrakib015@gmail.com',
+      role: 'SUPER_ADMIN',
+    });
 
     const app = createEmergencyApiApp({
       verifyNeonActorOverride: async (token: string) => TEST_ACTORS[token] || null,
@@ -126,6 +145,8 @@ describe('BloodSearch Neon PostgreSQL Architecture, Security, Migration & Backup
     setDatabaseOverrideForTesting(null);
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await pgClient.close();
+    if (previousSuperAdminEmail === undefined) delete process.env.SUPER_ADMIN_EMAIL;
+    else process.env.SUPER_ADMIN_EMAIL = previousSuperAdminEmail;
   });
 
   async function apiJson(
@@ -681,4 +702,3 @@ describe('BloodSearch Neon PostgreSQL Architecture, Security, Migration & Backup
     assert.equal(lockedCheck.json.code, 'ADMIN_BRUTE_FORCE_LOCKED');
   });
 });
-

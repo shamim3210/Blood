@@ -139,7 +139,8 @@ export class BloodSearchOtpService {
     this.isProduction =
       typeof options?.isProduction === 'boolean'
         ? options.isProduction
-        : nodeEnv === 'production';
+        : nodeEnv === 'production' ||
+          String(process.env.VERCEL_ENV || '').trim().toLowerCase() === 'production';
 
     const envSandboxFlag = String(process.env.ENABLE_DEV_OTP_SANDBOX ?? 'true')
       .trim()
@@ -151,12 +152,17 @@ export class BloodSearchOtpService {
         ? options.enableDevSandbox
         : envSandboxFlag !== 'false';
 
-    const secretRaw =
-      options?.hmacSecret ||
-      (process.env.OTP_HMAC_SECRET && process.env.OTP_HMAC_SECRET.trim().length >= 32
-        ? process.env.OTP_HMAC_SECRET.trim()
-        : crypto.randomBytes(32).toString('hex'));
-    this.hmacSecret = Buffer.from(secretRaw, 'utf8');
+    const secretRaw = String(options?.hmacSecret || process.env.OTP_HMAC_SECRET || '').trim();
+    if (
+      this.isProduction &&
+      (secretRaw.length < 32 || /^(YOUR_|GENERATE_|REPLACE_|CHANGE_ME)/i.test(secretRaw))
+    ) {
+      throw new Error('OTP_HMAC_SECRET must be configured with a unique random secret of at least 32 characters in production.');
+    }
+    this.hmacSecret = Buffer.from(
+      secretRaw || crypto.randomBytes(32).toString('hex'),
+      'utf8'
+    );
 
     this.smsGateway = options?.smsGateway || createSmsGatewayFromEnv(process.env);
     this.nowFn = options?.nowFn || (() => Date.now());

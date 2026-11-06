@@ -23,17 +23,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-    <script>
-      window.addEventListener('unhandledrejection', function(event) {
-        var reason = event.reason;
-        if (reason && (
-          (typeof reason.message === 'string' && (reason.message.includes('WebSocket') || reason.message.includes('ws://') || reason.message.includes('wss://'))) ||
-          (typeof reason.stack === 'string' && reason.stack.includes('@vite/client'))
-        )) {
-          event.preventDefault();
-        }
-      });
-    </script>
   </head>
   <body class="antialiased selection:bg-rose-500 selection:text-white">
     <div id="root"></div>

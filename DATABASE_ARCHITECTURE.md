@@ -10,9 +10,9 @@ To preserve working authentication, real-time push infrastructure, and zero-trus
 | :--- | :--- | :--- |
 | **Primary Application Data** | **Neon PostgreSQL (Serverless Postgres 16/17)** | ACID transactions, relational foreign keys, `CHECK` constraints, donor PII vault separation (`private_contacts`), paginated geospatial search, and immutable audit trails (`audit_logs`). |
 | **ORM & SQL Migration Layer** | **Drizzle ORM (`drizzle-orm`) + `drizzle-kit`** | Zero-overhead TypeScript SQL builder, 100% parameterized queries, deterministic SQL DDL migrations (`/drizzle/*.sql`), and seamless compatibility with both `pg.Pool` (Neon pooled TCP/TLS) and embedded PostgreSQL 16 (`@electric-sql/pglite`) for automated CI verification. |
-| **User Identity & Authentication** | **Firebase Authentication** | Preserves existing user accounts, Google Sign-In, Email/Password, Phone OTP custom tokens, and cryptographic RS256 ID Tokens (`users.uid` = Firebase Auth UID). |
-| **Push Notifications** | **Firebase Cloud Messaging (FCM)** | Delivers background Web Push / Android TWA emergency alerts using tokens registered in PostgreSQL `device_tokens`. |
-| **Secure Backend API Gateway** | **Express.js (`server.ts` + `/api/v1/*`)** | Sole component permitted to hold `DATABASE_URL` and connect to Neon. Verifies Firebase JWTs, enforces DB-backed RBAC, rate limits requests, and masks private donor contact data. |
+| **User Identity & Authentication** | **Google OIDC + Neon PostgreSQL** | Verifies Google RS256 ID tokens and also supports Scrypt Email/Password and Bangladesh Phone OTP; opaque application sessions are stored as hashes in `login_sessions`. |
+| **Push & SMS Notifications** | **Web Push + Optional Configured SMS Gateway** | Device subscriptions/tokens are registered in PostgreSQL `device_tokens`; outbound SMS stays disabled until an operator configures a provider. |
+| **Secure Backend API Gateway** | **Express.js (`server.ts` + `/api/v1/*`)** | Sole component permitted to hold `DATABASE_URL` and connect to Neon. Verifies OIDC claims or opaque sessions, enforces server-side RBAC, rate limits requests, and masks private donor contact data. |
 | **React Web / PWA / Android APK** | **Vite + React 19 SPA** | **Zero direct database access.** Communicates with PostgreSQL exclusively over HTTPS `/api/v1/*` with `Authorization: Bearer <Firebase_ID_Token>`. |
 
 ---
@@ -27,14 +27,14 @@ To preserve working authentication, real-time push infrastructure, and zero-trus
         ▼
 [ Express.js Security Gateway (server.ts -> /api/v1/*) ]
   ├─ Sliding-window IP & UID Rate Limiter
-  ├─ Firebase Admin RS256 JWT Verifier (src/server/firebaseAuthVerifier.ts)
+  ├─ Google OIDC RS256 Verifier + opaque session/CSRF validation
   ├─ Server-Side RBAC Resolver (Super Owner + PostgreSQL admin_roles)
   ├─ Donor PII Vault Gate (donor_profiles vs private_contacts + user_consents)
   └─ Drizzle ORM Transactional Repository (src/db/repositories/bloodSearchRepo.ts)
         │
         │  TLS 1.2+ (sslmode=verify-full, rejectUnauthorized: true)
         │  Pooled PgBouncer Endpoint (-pooler.neon.tech)
-        │  Least-Privilege Role: `bloodsearch_app` (No DDL, No audit_logs DELETE)
+        │  Runtime Role: `bloodsearch_app_runtime` (DML only; audit rows append-only)
         ▼
 [ Neon PostgreSQL Primary Database ]
 ```
@@ -74,10 +74,16 @@ All multi-table state changes execute inside `db.transaction(async (tx) => { ...
 
 ---
 
-## 5. Controlled Cutover Modes (Zero Uncontrolled Dual Writes)
+## 5. Production Database Access & Deployment Boundaries
 
-`DB_CUTOVER_MODE` (`src/db/neonConfig.ts`) prevents split-brain state between legacy Firestore and Neon PostgreSQL:
-
-- `FIRESTORE_PRIMARY`: Default pre-cutover state while `DATABASE_URL` is unconfigured or migration is being prepared.
-- `MIGRATION_READ_VERIFY`: Used while running `npm run db:backup-firestore`, `npm run db:migrate-firestore`, and `npm run db:verify-migration`.
-- `NEON_PRIMARY`: Activated once `verify-neon-migration.ts` confirms 100% record count parity and Firebase UID preservation. All new BloodSearch `/api/v1/*` operational records commit exclusively to Neon PostgreSQL while legacy Firestore collections remain preserved read-only as historical backup.
+- Neon PostgreSQL is the application's sole database. There is no active Firestore
+  dual-write or cutover path.
+- `DATABASE_URL` is the pooled runtime connection for `bloodsearch_app_runtime`;
+  `DIRECT_DATABASE_URL` is the direct migration connection for `bloodsearch_migrator`.
+- Production startup verifies that the Drizzle schema is present but does not run
+  schema DDL with application credentials. Missing schema or an unavailable Neon
+  connection fails closed; apply migrations explicitly before deploying.
+- The API enforces authorization in its server-side repositories. PostgreSQL RLS is
+  not enabled because database transactions do not yet establish actor-scoped policy
+  context. Do not enable RLS until matching policies and transaction context are
+  implemented and tested.

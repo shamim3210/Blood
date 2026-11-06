@@ -160,7 +160,6 @@ VITE_GOOGLE_CLIENT_ID="REPLACE_WITH_GOOGLE_OAUTH_CLIENT_ID.apps.googleuserconten
 
 # Super Admin & Cryptographic Secrets
 SUPER_ADMIN_EMAIL="${buyerAdminEmail.trim() || 'admin@buyerdomain.com'}"
-VITE_SUPER_ADMIN_EMAIL="${buyerAdminEmail.trim() || 'admin@buyerdomain.com'}"
 SESSION_HMAC_SECRET="REPLACE_WITH_64_HEX_RANDOM_SECRET"
 OTP_HMAC_SECRET="REPLACE_WITH_64_HEX_RANDOM_SECRET"
 

@@ -21,9 +21,10 @@ Two verified Capacitor 8 Android APK packages (App ID: `bd.bloodsearch.app`, Ver
 # 1. Install dependencies
 npm install
 
-# 2. Configure production backend API URL if hosting API on a separate domain
+# 2. Set the HTTPS API origin used by the standalone Android app.
+# Native Capacitor builds need this even when the API shares the website domain.
 # Example in .env.production:
-# VITE_API_BASE_URL="https://your-production-domain.example.com"
+# VITE_API_BASE_URL="https://blood-search-apk.vercel.app"
 # VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
 
 # 3. Build web bundle and sync into Capacitor Android project
@@ -90,9 +91,9 @@ $ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner verify --verbose BloodSearch-rele
 
 ## 4. Backend CORS & Google Sign-In Configuration for Android APK
 
-1. Ensure your backend `.env` includes Capacitor origins in `ALLOWED_ORIGINS`:
+1. Ensure your backend `.env` includes the APK's Capacitor origins in `CORS_ALLOWED_ORIGINS`:
    ```env
-   ALLOWED_ORIGINS="https://your-production-domain.example.com,capacitor://localhost,https://localhost"
+   CORS_ALLOWED_ORIGINS="https://blood-search-apk.vercel.app,capacitor://localhost,https://localhost"
    ```
 2. In **Google Cloud Console -> APIs & Services -> Credentials**:
    - Keep your **Web Application OAuth 2.0 Client ID** in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.

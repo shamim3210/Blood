@@ -44,7 +44,11 @@ function isServerlessEnvironment(env: NodeJS.ProcessEnv): boolean {
   );
 }
 
-async function ensureNeonPoolSchemaReady(pool: pg.Pool, info: ValidatedNeonConnectionInfo): Promise<boolean> {
+async function ensureNeonPoolSchemaReady(
+  pool: pg.Pool,
+  info: ValidatedNeonConnectionInfo,
+  isProductionDeployment: boolean
+): Promise<boolean> {
   if (neonConnectionHealthy) return true;
   if (!neonBootstrapPromise) {
     neonBootstrapPromise = (async () => {
@@ -56,6 +60,11 @@ async function ensureNeonPoolSchemaReady(pool: pg.Pool, info: ValidatedNeonConne
              AND table_name IN ('users', 'auth_identities', 'login_sessions', 'donor_profiles', 'contact_requests', 'direct_messages', 'reports')`
         );
         if (Number(checkRes.rows[0]?.cnt) < 7) {
+          if (isProductionDeployment) {
+            throw new Error(
+              'Production Neon schema is incomplete. Run npm run db:migrate with DIRECT_DATABASE_URL; the runtime role will not execute DDL.'
+            );
+          }
           const client = await pool.connect();
           try {
             for (const stmt of CORE_BOOTSTRAP_STATEMENTS) {
@@ -101,6 +110,8 @@ export async function ensureMainPostgresReady(
     pool: pg.Pool | null;
     info: ValidatedNeonConnectionInfo;
   };
+  const isProductionDeployment =
+    env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production';
 
   try {
     current = getNeonDatabase(env);
@@ -130,18 +141,21 @@ export async function ensureMainPostgresReady(
   }
 
   if (current.db && current.pool) {
-    const ready = await ensureNeonPoolSchemaReady(current.pool, current.info);
+    const ready = await ensureNeonPoolSchemaReady(current.pool, current.info, isProductionDeployment);
     if (ready) {
       return current;
     }
-    if (isServerlessEnvironment(env)) {
+    if (isProductionDeployment) {
       return {
         db: null,
         pool: null,
         info: {
           ...current.info,
           configured: false,
-          warnings: [...current.info.warnings, 'Neon PostgreSQL endpoint was unreachable during cold start.'],
+          warnings: [
+            ...current.info.warnings,
+            'Neon PostgreSQL connection or production schema verification failed.',
+          ],
         },
       };
     }
@@ -150,6 +164,7 @@ export async function ensureMainPostgresReady(
   }
 
   if (
+    isProductionDeployment ||
     process.env.BLOODSEARCH_SERVERLESS_MODE === 'true' ||
     env !== process.env ||
     env.BLOODSEARCH_DISABLE_EMBEDDED_PG === 'true' ||
@@ -173,10 +188,7 @@ export async function ensureMainPostgresReady(
           client = new PGliteRuntime(EMBEDDED_PG_DIR);
           await client.waitReady;
         } catch {
-          // If directory is locked or has corrupted WASM state, cleanly fall back to in-memory PostgreSQL 16
-          try {
-            fs.rmSync(EMBEDDED_PG_DIR, { recursive: true, force: true });
-          } catch {}
+          // Preserve persistent user data if the on-disk database cannot be opened.
           client = new PGliteRuntime();
           await client.waitReady;
         }

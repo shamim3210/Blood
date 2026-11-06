@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { isIP } from 'node:net';
 import type { IncomingMessage } from 'node:http';
 import type { Request, Response } from 'express';
 import { and, eq, gt, lt, sql } from 'drizzle-orm';
@@ -45,15 +46,37 @@ export function sha256Hex(raw: string): string {
   return crypto.createHash('sha256').update(raw, 'utf8').digest('hex');
 }
 
+export function hashClientIp(rawIp: string): string {
+  const salt = process.env.AUDIT_IP_SALT?.trim();
+  if (!salt) {
+    return hashIdentifier(`IP:${rawIp}`);
+  }
+  return crypto
+    .createHmac('sha256', salt)
+    .update(`IP:${rawIp}`, 'utf8')
+    .digest('hex')
+    .slice(0, 32);
+}
+
+export function resolveTrustedClientIp(
+  headers: IncomingMessage['headers'],
+  remoteAddress: string | undefined,
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  if (env.VERCEL === '1') {
+    const forwardedFor = headers['x-forwarded-for'];
+    const candidate = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)
+      ?.split(',')[0]
+      ?.trim();
+    if (candidate && isIP(candidate)) return candidate;
+  }
+
+  if (remoteAddress && isIP(remoteAddress)) return remoteAddress;
+  return '127.0.0.1';
+}
+
 export function extractHashedClientIp(req: Request | IncomingMessage): string {
-  const xff = req.headers['x-forwarded-for'];
-  const rawIp =
-    typeof xff === 'string' && xff.trim()
-      ? xff.split(',')[0]!.trim()
-      : Array.isArray(xff) && xff.length > 0
-        ? String(xff[0]).trim()
-        : (req.socket?.remoteAddress || '127.0.0.1');
-  return hashIdentifier(`IP:${rawIp}`);
+  return hashClientIp(resolveTrustedClientIp(req.headers, req.socket?.remoteAddress));
 }
 
 export function parseCookieHeader(cookieHeader: string | undefined): Record<string, string> {
@@ -640,17 +663,11 @@ export async function registerEmailPasswordUserTx(
         .limit(1);
 
       if (!existingIdentity) {
-        // User exists (e.g. from Google or seed), link password now
-        await tx.insert(authIdentities).values({
-          userUid: existing.uid,
-          provider: 'EMAIL_PASSWORD',
-          providerSubject: email,
-          email,
-          emailVerified: true,
-          passwordHash,
-          lastLoginAt: new Date(),
-        });
-        uid = existing.uid;
+        throw new DomainSecurityError(
+          409,
+          'EMAIL_ALREADY_REGISTERED',
+          'This email is already registered. Please sign in with its existing authentication method.'
+        );
       } else {
         const valid = await verifyPasswordScrypt(params.password, existingIdentity.passwordHash);
         if (valid) {
@@ -732,26 +749,8 @@ export async function loginEmailPasswordUserTx(
       .limit(1);
 
     if (existingUser) {
-      if (password.length >= 6) {
-        const passwordHash = await hashPasswordScrypt(password);
-        await db.insert(authIdentities).values({
-          userUid: existingUser.uid,
-          provider: 'EMAIL_PASSWORD',
-          providerSubject: email,
-          email,
-          emailVerified: true,
-          passwordHash,
-          lastLoginAt: now,
-        });
-
-        return createOpaqueSessionTx(db, {
-          userUid: existingUser.uid,
-          authMethod: 'EMAIL_PASSWORD',
-          ipHash: params.ipHash,
-          userAgent: params.userAgent,
-          rotateExistingSessions: true,
-        });
-      }
+      await deriveScryptAsync(password, DUMMY_SALT);
+      throw new DomainSecurityError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
     } else {
       // Brand-new user who submitted on "Sign In" tab instead of "Create Account" tab:
       // If password has at least 6 characters, automatically create their account and log them in!

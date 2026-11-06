@@ -196,7 +196,7 @@ function evaluateRequestOrigin(
     const parsed = new URL(raw);
     const normalizedOrigin = parsed.origin;
     const lowerOrigin = normalizedOrigin.toLowerCase();
-    const hostHeader = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+    const hostHeader = String(req.headers.host || '')
       .split(',')[0]
       ?.trim()
       .toLowerCase();
@@ -221,7 +221,15 @@ export function createEmergencyApiApp(options?: {
   const app = express();
   app.disable('x-powered-by');
 
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd =
+    process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  const auditIpSalt = String(process.env.AUDIT_IP_SALT || '').trim();
+  if (
+    isProd &&
+    (auditIpSalt.length < 32 || /^(YOUR_|GENERATE_|REPLACE_|CHANGE_ME)/i.test(auditIpSalt))
+  ) {
+    throw new Error('AUDIT_IP_SALT must be configured with a unique random secret of at least 32 characters in production.');
+  }
   const configuredAllowlist = buildConfiguredAllowedOrigins();
   const otpService = new BloodSearchOtpService(options?.otpServiceOptions);
 
@@ -399,10 +407,13 @@ export function createEmergencyApiApp(options?: {
   const handleGoogleOAuthCallback = async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    let callbackTargetOrigin = '';
+    let callbackRedirectUri = '';
 
     const renderPopupResult = (payload: Record<string, unknown>, statusMessage: string) => {
       const safeJson = JSON.stringify(payload).replace(/</g, '\\u003c');
       const safeMsg = statusMessage.replace(/[<>&"]/g, '');
+      const safeTargetOrigin = JSON.stringify(callbackTargetOrigin);
       res.send(`<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>BloodSearch Sign-In</title></head>
@@ -414,7 +425,9 @@ export function createEmergencyApiApp(options?: {
     (function() {
       var msg = ${safeJson};
       if (window.opener) {
-        window.opener.postMessage(msg, '*');
+        if (${safeTargetOrigin}) {
+          window.opener.postMessage(msg, ${safeTargetOrigin});
+        }
         window.close();
       } else {
         window.location.href = '/';
@@ -426,6 +439,9 @@ export function createEmergencyApiApp(options?: {
     };
 
     try {
+      callbackRedirectUri = resolveAppCallbackRedirectUri(req);
+      callbackTargetOrigin = new URL(callbackRedirectUri).origin;
+
       const oauthError = String(req.query.error || '').trim();
       if (oauthError) {
         renderPopupResult(
@@ -517,7 +533,6 @@ export function createEmergencyApiApp(options?: {
         return;
       }
 
-      const redirectUri = resolveAppCallbackRedirectUri(req);
       const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -525,7 +540,7 @@ export function createEmergencyApiApp(options?: {
           code,
           client_id: clientId,
           client_secret: clientSecret,
-          redirect_uri: redirectUri,
+          redirect_uri: callbackRedirectUri,
           grant_type: 'authorization_code',
         }).toString(),
       });

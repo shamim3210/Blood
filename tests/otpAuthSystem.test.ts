@@ -27,8 +27,13 @@ import {
 import { createEmergencyApiApp } from '../server';
 import { closeNeonDatabase } from '../src/db/index';
 
+const previousAuditIpSalt = process.env.AUDIT_IP_SALT;
+process.env.AUDIT_IP_SALT = 'integration-test-audit-ip-salt-32-bytes';
+
 after(async () => {
   await closeNeonDatabase();
+  if (previousAuditIpSalt === undefined) delete process.env.AUDIT_IP_SALT;
+  else process.env.AUDIT_IP_SALT = previousAuditIpSalt;
 });
 
 async function startTestServer(app: ReturnType<typeof createEmergencyApiApp>) {
@@ -321,11 +326,24 @@ test('Phase 4: 60s resend cooldown, old OTP invalidation on resend, and phone/IP
 });
 
 test('Phase 2 & 8: Production lock strictly blocks Dev Sandbox OTP and Express session persistence / logout works cleanly', async () => {
+  const previousOtpSecret = process.env.OTP_HMAC_SECRET;
+  try {
+    delete process.env.OTP_HMAC_SECRET;
+    assert.throws(
+      () => new BloodSearchOtpService({ isProduction: true }),
+      /OTP_HMAC_SECRET must be configured/
+    );
+  } finally {
+    if (previousOtpSecret === undefined) delete process.env.OTP_HMAC_SECRET;
+    else process.env.OTP_HMAC_SECRET = previousOtpSecret;
+  }
+
   // 1. Production mode must strictly refuse Dev Sandbox OTP
   const prodApp = createEmergencyApiApp({
     otpServiceOptions: {
       isProduction: true,
       enableDevSandbox: true, // Even if misconfigured true, production lock overrides to false!
+      hmacSecret: 'integration-test-production-hmac-secret-2026',
     },
   });
   const prodSrv = await startTestServer(prodApp);
@@ -510,5 +528,3 @@ test('Phase 9: Bangladesh phone normalization (Bangla + ASCII digits) and Neon s
   assert.equal(schemaSource.includes("'direct_messages'"), true);
   assert.equal(schemaSource.includes("'reports'"), true);
 });
-
-

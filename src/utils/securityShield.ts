@@ -33,13 +33,13 @@ function scrubForgedLocalRoleEscalation(): void {
     sessionStorage.removeItem('bloodsearch_admin_auth');
     localStorage.removeItem('bloodsearch_admin_auth');
 
-    // Scrub any legacy stored owner email in whitelabel config cache
+    // Remove legacy owner emails from the public whitelabel config cache
     const wlRaw = localStorage.getItem('bloodsearch_whitelabel_config');
-    if (wlRaw && wlRaw.includes('@gmail.com')) {
+    if (wlRaw) {
       try {
         const wlParsed = JSON.parse(wlRaw);
-        if (wlParsed && typeof wlParsed === 'object' && typeof wlParsed.superAdminEmail === 'string') {
-          wlParsed.superAdminEmail = 'Authorized Super Owner';
+        if (wlParsed && typeof wlParsed === 'object' && 'superAdminEmail' in wlParsed) {
+          delete wlParsed.superAdminEmail;
           localStorage.setItem('bloodsearch_whitelabel_config', JSON.stringify(wlParsed));
         }
       } catch {

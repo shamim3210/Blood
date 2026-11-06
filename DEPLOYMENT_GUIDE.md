@@ -12,9 +12,7 @@
 ## 2. Step-by-Step Neon PostgreSQL Provisioning
 
 1. Create a new project in [Neon Console](https://console.neon.tech) (recommended region: **AWS Singapore `ap-southeast-1`** for lowest latency in Bangladesh).
-2. Open the Neon SQL Editor as `neondb_owner` and run `drizzle/least_privilege_roles.sql` (replacing the placeholder passwords with strong 32-byte secrets) to create:
-   - `bloodsearch_migrator` (DDL migration role)
-   - `bloodsearch_app_runtime` (least-privilege DML runtime role)
+2. In Neon Console -> **Roles**, create login roles `bloodsearch_migrator` and `bloodsearch_app_runtime` with unique strong passwords. Store passwords only in a password manager and backend secret settings; the SQL grants script contains no passwords.
 3. Copy two connection strings from Neon:
    - **Pooled connection string** (`-pooler` hostname) with `?sslmode=verify-full` -> set as `DATABASE_URL` using `bloodsearch_app_runtime`.
    - **Direct connection string** (non-pooler hostname) with `?sslmode=verify-full` -> set as `DIRECT_DATABASE_URL` using `bloodsearch_migrator`.
@@ -22,7 +20,7 @@
    ```bash
    npm run db:migrate
    ```
-   *(Note: On first cold start, `server.ts` also verifies core tables idempotently if permissions allow, and exposes health metrics at `GET /api/v1/db/health`.)*
+5. As `neondb_owner`, run `drizzle/least_privilege_roles.sql` to apply the runtime grants and prevent the API role from changing or deleting audit rows. Run it again after migrations that add tables. Production startup verifies the schema but never runs DDL; migrations must use the direct migration URL.
 
 ---
 
@@ -62,6 +60,12 @@ curl -sS https://<YOUR_DOMAIN>/version.json
 ### Option B: Vercel Full-Stack Deployment
 `vercel.json` and `api/index.ts` route `/api/*` and `/auth/callback` through the Express handler while serving static PWA assets from `dist/`. The OAuth callback is explicitly rewritten to the serverless Express function; do not remove that rewrite.
 Set all variables from `.env.example` in **Vercel Project Settings -> Environment Variables** and deploy with `vercel --prod`.
+
+Vercel Functions are request-scoped and do not support this server's native WebSocket
+upgrade listener. The client falls back to SSE and polling, but persistent real-time
+delivery is not guaranteed by the 15-second function limit. Use Cloud Run or another
+persistent Node host for guaranteed WebSocket/SSE delivery; alternatively, configure
+an external realtime service before relying on live emergency alerts.
 
 ---
 

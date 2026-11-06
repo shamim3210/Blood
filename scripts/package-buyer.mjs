@@ -60,40 +60,34 @@ for (const entry of fs.readdirSync(ROOT_DIR)) {
   copyRecursive(path.join(ROOT_DIR, entry), path.join(OUTPUT_DIR, entry));
 }
 
-const brandCfgOutPath = path.join(OUTPUT_DIR, 'src', 'config', 'brandConfig.ts');
-if (fs.existsSync(brandCfgOutPath)) {
-  const rawBrand = fs.readFileSync(brandCfgOutPath, 'utf8');
-  const updatedBrand = rawBrand.replace(/shamimrakib015@gmail\.com/g, buyerAdminEmail);
-  fs.writeFileSync(brandCfgOutPath, updatedBrand, 'utf8');
-}
-
 const envOutPath = path.join(OUTPUT_DIR, '.env.example');
 const buyerEnvTemplate = `# White-Label Brand & Ownership Configuration
+PORT="3000"
+APP_URL="https://yourdomain.com"
+CORS_ALLOWED_ORIGINS="https://yourdomain.com,capacitor://localhost,https://localhost"
+
 VITE_BRAND_NAME="${buyerBrandName}"
 VITE_BRAND_TAGLINE="FIND BLOOD. SAVE LIFE."
 VITE_ORG_NAME="${buyerOrgName}"
 VITE_SUPPORT_PHONE="16263"
 VITE_SUPPORT_EMAIL="support@yourdomain.com"
-VITE_SUPER_ADMIN_EMAIL="${buyerAdminEmail}"
 VITE_DEFAULT_REAL_ONLY_MODE="true"
 VITE_API_BASE_URL=""
 VITE_GOOGLE_CLIENT_ID=""
 
 # Primary Application Database — Neon PostgreSQL (Server-Side Only — NEVER prefix with VITE_)
-DATABASE_URL=""
-DIRECT_DATABASE_URL=""
-DB_CUTOVER_MODE="NEON_PRIMARY"
+DATABASE_URL="postgresql://<runtime-role>:<password>@<pooled-host>/neondb?sslmode=verify-full"
+DIRECT_DATABASE_URL="postgresql://<migration-role>:<password>@<direct-host>/neondb?sslmode=verify-full"
 NEON_PLAN_TIER="FREE"
 DB_POOL_MAX="10"
 
 # Google OIDC & Session Security (Server-Side Only)
-APP_URL="https://yourdomain.com"
-CORS_ALLOWED_ORIGINS="https://yourdomain.com,capacitor://localhost,https://localhost"
 SUPER_ADMIN_EMAIL="${buyerAdminEmail}"
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-SESSION_COOKIE_SECRET=""
-OTP_SIGNING_SECRET=""
+GOOGLE_CLIENT_ID="YOUR_GOOGLE_OAUTH_WEB_CLIENT_ID.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_OAUTH_WEB_CLIENT_SECRET"
+AUDIT_IP_SALT="GENERATE_64_HEX_CHAR_RANDOM_SECRET_HERE"
+OTP_HMAC_SECRET="GENERATE_64_HEX_CHAR_RANDOM_SECRET_HERE"
+BLOODSEARCH_ENABLE_AUTH_SANDBOX="false"
 
 # Optional SMS Gateway (Server-Side Only)
 SMS_PROVIDER="NONE"

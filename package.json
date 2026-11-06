@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "node server.ts",
+    "start": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
@@ -20,7 +20,7 @@
     "cap:sync": "npx cap sync android",
     "apk:build": "npm run build && npx cap sync android",
     "package:buyer": "node scripts/package-buyer.mjs",
-    "clean": "rm -rf dist server.js buyer-release",
+    "clean": "node -e \"for (const path of ['dist', 'server.js', 'buyer-release']) require('node:fs').rmSync(path, { recursive: true, force: true })\"",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

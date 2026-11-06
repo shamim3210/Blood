@@ -1,6 +1,6 @@
 # BloodSearch — Production Security Hardening, Neon Migration & Android APK Testing Report
 
-## 1. Execution Summary (Actual Verified Results)
+## 1. Historical Execution Summary (Not Re-verified in This Review)
 
 All backend, authentication, session, RBAC, IDOR, rate-limiting, emergency SOS, and backup/restore tests were executed against a **real PostgreSQL 16 database engine (`@electric-sql/pglite`)** running the generated **28-table** Drizzle DDL migration (`/drizzle/0000_bloodsearch_neon_core.sql`) and live Express HTTP endpoints (`/api/v1/*`, `/auth/callback`), alongside full Capacitor 8 + Gradle 8.14.3 / Android SDK 36 native APK builds.
 
@@ -47,25 +47,66 @@ All backend, authentication, session, RBAC, IDOR, rate-limiting, emergency SOS, 
 - Verifies Bangladesh mobile E.164 normalization (ASCII + Bangla digits across GP, Robi, Banglalink, Airtel, Teletalk), salted HMAC-SHA256 OTP digests, 5-attempt OTP lockout, 300s expiry, 60s resend cooldown, per-phone & per-IP rate limits, strict production lock disabling Dev Sandbox OTP (`403 DEV_OTP_DISABLED_IN_PRODUCTION`), SSRF-guarded SMS gateway adapters (`W3SMS`, `ZENDSMS`, `BTRC_CUSTOM`), and zero Firebase remnants across the codebase.
 
 
-## 4. Independent Review Addendum (2026-11-06)
+## 4. Initial ZIP Review Addendum (2026-11-06; historical)
 
 See `SECURITY_REVIEW_2026-11-06.md` for the focused Google login and security review. The historical test claims above were not independently reproduced in this review. Dependency installation timed out, so current lint, full tests, and production build could not be rerun. The existing APK files were integrity-checked but not rebuilt.
 
-## 5. Follow-up source review & verification status
+## 5. Current Source Review & Verification (2026-11-07)
 
-The previous execution summary above is a historical report included in the supplied ZIP. During the 2026-11-06 follow-up, its live claims were **not independently reproduced** in this environment.
+The historical results in sections 1–3 are not treated as current evidence. These
+checks were run against the current local workspace:
 
-Changes made in this follow-up source review:
-- Removed client-side `VITE_SUPER_ADMIN_EMAIL` and hardcoded owner digest as a means of granting Admin UI status. Client role data is now only a UI hint; the Admin verification request must consult the backend.
-- Removed the Super Admin password-mismatch bypass that silently replaced the stored password during login/registration. Failed passwords now follow the normal failure/lockout path.
-- Removed hardcoded personal owner email/digest from server identity matching. Server bootstrap identity is read only from server-side `SUPER_ADMIN_EMAIL`, and a matching active `SUPER_ADMIN` role row in Neon is still required.
-- Hardened OAuth callback redirect selection: production uses configured `APP_URL` or an exact allowlisted origin from `CORS_ALLOWED_ORIGINS`; arbitrary `redirectOrigin` query/body values are not trusted.
-- Added `GOOGLE_OAUTH_VERCEL_SETUP.md` with the exact operator-side steps required for live Google OAuth verification.
+| Command / check | Result |
+|---|---|
+| `npm run lint` (`tsc --noEmit`) | **PASS** |
+| `npm test` | **PASS: 43 tests, 0 failures** |
+| `npm run build` | **PASS** |
+| `npm run apk:build` | **PASS**; web production build and Capacitor Android sync completed |
+| Android Gradle `:app:assembleDebug` | **PASS**; debug APK signature verified with APK Signature Scheme v2 |
+| Debug APK metadata | **PASS**; package `bd.bloodsearch.app`, version `2.5.0` (`versionCode 250`) |
+| Debug APK copies | **MATCH**; root and `public/downloads/` copies have SHA-256 `A7198A8BBE9425FF683ED4B3913C88C13BF03FF6129156AA44601398EB1AF2D3` |
+| Live website | **HTTP 200** |
+| Live `/api/v1/auth/config` | **HTTP 500**; production authentication is not ready |
+| Neon `production` branch / `neondb` | **0 public tables**; no application RLS policies are installed |
 
-Verification performed in this follow-up:
-- TypeScript/TSX syntax transpilation: 83 files checked, 0 syntax diagnostics.
-- Full `tsc --noEmit`: **not completed** because dependencies/type packages were unavailable in the environment.
-- `npm ci`: timed out twice; no full dependency install completed.
-- Full test suite and production build: not rerun.
-- Real Google OAuth login: **not live-tested**; this requires the owner's Vercel secrets, Google Cloud OAuth client and deployed domain.
-- No claim of production readiness or hack-proof security is made.
+The local `.env` and Vercel Production environment do not have the real Neon
+`DATABASE_URL` or Google OAuth client credentials. The Neon SQL Editor is reachable
+as `neondb_owner`, but no schema migration was run. Google Cloud denies access to
+OAuth client details (`oauthconfig.testusers.get` is missing). No production secrets
+were copied into source or chat, no database records were changed, and no paid plan
+or billing setting was enabled.
+
+RLS was not enabled: the production branch currently has no application tables, and
+the API does not yet establish transaction-scoped user identity for row-level
+policies. Enabling RLS without matching policies/context would break API access;
+the existing API performs authorization in its server-side repositories instead.
+Production Google sign-in and database-backed authentication remain blocked until
+the owner configures the Neon connection and authorized Google OAuth credentials in
+Vercel, then deploys and verifies the result. A signed Android release APK also
+requires the owner's release keystore.
+
+Security issues found and fixed in the earlier source review:
+
+Security issues found and fixed in this source review:
+- Password registration can no longer attach a password identity to an existing
+  Google-only account without proof of control of its existing sign-in method.
+- OAuth callback `postMessage` now targets the configured callback origin; the client
+  accepts the session-bearing message only from the expected origin and popup.
+- Production startup now rejects missing or placeholder `AUDIT_IP_SALT` and
+  `OTP_HMAC_SECRET`, preventing unsalted audit-IP hashes and per-instance OTP keys.
+- Serverless API initialization failures now return HTTP 503 rather than success-shaped
+  empty donor/contact results.
+- WebSocket/SSE event parsing now consumes the server's `type` event shape and the
+  actual default SSE `message` event; regression tests cover valid and malformed
+  messages. Removed the global `unhandledrejection` suppression that hid WebSocket
+  and Vite failures from diagnostics.
+- Production database startup no longer executes schema DDL using runtime
+  credentials; incomplete schemas fail closed and require the explicit migrator.
+- A failed local PostgreSQL startup no longer recursively deletes the persistent
+  `.data` database before falling back to an in-memory instance.
+- Client IP rate-limit/audit keys ignore spoofable forwarding headers outside
+  Vercel, and CORS same-host checks no longer trust `X-Forwarded-Host`.
+
+No claim of live production readiness is made. Vercel's request-scoped functions do
+not support the app's native WebSocket upgrade listener; see `DEPLOYMENT_GUIDE.md`
+for the realtime delivery limitation and hosting options.

@@ -8,7 +8,6 @@ export interface WhiteLabelBrandConfig {
   organizationName: string;
   supportPhone: string;
   supportEmail: string;
-  superAdminEmail: string;
   defaultRealOnlyMode: boolean;
 }
 
@@ -50,7 +49,6 @@ export function getEnvDefaultBrandConfig(): WhiteLabelBrandConfig {
     organizationName: (env.VITE_ORG_NAME || 'Bangladesh Emergency Blood Network').trim(),
     supportPhone: (env.VITE_SUPPORT_PHONE || '16263').trim(),
     supportEmail: (env.VITE_SUPPORT_EMAIL || 'support@bloodsearch.org').trim(),
-    superAdminEmail: (env.VITE_SUPER_ADMIN_EMAIL || 'Authorized Super Owner').trim(),
     defaultRealOnlyMode: env.VITE_DEFAULT_REAL_ONLY_MODE === 'true',
   };
 }
@@ -74,7 +72,6 @@ export function getBrandConfig(): WhiteLabelBrandConfig {
       organizationName: (parsed.organizationName || defaults.organizationName).trim(),
       supportPhone: (parsed.supportPhone || defaults.supportPhone).trim(),
       supportEmail: (parsed.supportEmail || defaults.supportEmail).trim(),
-      superAdminEmail: (parsed.superAdminEmail || defaults.superAdminEmail).trim(),
       defaultRealOnlyMode:
         typeof parsed.defaultRealOnlyMode === 'boolean'
           ? parsed.defaultRealOnlyMode
@@ -143,7 +140,7 @@ export interface BrandPresetItem {
   labelEn: string;
   audienceBn: string;
   audienceEn: string;
-  config: Omit<WhiteLabelBrandConfig, 'superAdminEmail'>;
+  config: WhiteLabelBrandConfig;
 }
 
 export const COMMERCIAL_BRAND_PRESETS: BrandPresetItem[] = [

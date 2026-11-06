@@ -410,10 +410,25 @@ export function dismissTokenServiceAlert(): void {
 // 2. REAL-TIME WEBSOCKET + SSE MULTIPLEXER (NEON EVENT STREAM)
 // ============================================================================
 type RealtimeEventListener = (event: string, payload: unknown) => void;
+interface ParsedRealtimeEvent {
+  event: string;
+  payload: unknown;
+}
+
 const realtimeListeners = new Set<RealtimeEventListener>();
 let activeWs: WebSocket | null = null;
 let activeSse: EventSource | null = null;
 let wsReconnectTimer: number | null = null;
+
+export function parseRealtimeEventMessage(message: unknown): ParsedRealtimeEvent | null {
+  if (!message || typeof message !== 'object') return null;
+  const event = (message as { type?: unknown }).type;
+  if (typeof event !== 'string' || !event) return null;
+  return {
+    event,
+    payload: (message as { payload?: unknown }).payload,
+  };
+}
 
 function notifyRealtimeListeners(event: string, payload: unknown): void {
   realtimeListeners.forEach((fn) => {
@@ -437,10 +452,8 @@ function ensureRealtimeTransportConnected(): void {
       activeWs = ws;
       ws.onmessage = (ev) => {
         try {
-          const parsed = JSON.parse(String(ev.data || '{}'));
-          if (parsed?.event) {
-            notifyRealtimeListeners(String(parsed.event), parsed.payload);
-          }
+          const parsed = parseRealtimeEventMessage(JSON.parse(String(ev.data || '{}')));
+          if (parsed) notifyRealtimeListeners(parsed.event, parsed.payload);
         } catch {
           // Ignore malformed frame
         }
@@ -464,34 +477,16 @@ function ensureRealtimeTransportConnected(): void {
               withCredentials: true,
             });
             activeSse = sse;
-            const knownEvents = [
-              'donors:updated',
-              'donors:deleted',
-              'requests:created',
-              'requests:updated',
-              'alerts:sos',
-              'notifications:new',
-              'trips:updated',
-              'community:message',
-              'community:updated',
-              'community:deleted',
-              'direct:message',
-              'stock:updated',
-              'announcements:updated',
-              'reports:new',
-              'reports:updated',
-              'gratitude:new',
-            ];
-            for (const evtName of knownEvents) {
-              sse.addEventListener(evtName, (msgEvent) => {
-                try {
-                  const data = JSON.parse((msgEvent as MessageEvent).data || '{}');
-                  notifyRealtimeListeners(evtName, data.payload ?? data);
-                } catch {
-                  notifyRealtimeListeners(evtName, {});
-                }
-              });
-            }
+            sse.onmessage = (msgEvent) => {
+              try {
+                const parsed = parseRealtimeEventMessage(
+                  JSON.parse(msgEvent.data || '{}')
+                );
+                if (parsed) notifyRealtimeListeners(parsed.event, parsed.payload);
+              } catch {
+                // Ignore malformed event data and let the polling fallback continue.
+              }
+            };
           } catch {
             // Polling fallback in createRealtimePoller still keeps UI synced
           }
@@ -1102,6 +1097,28 @@ export async function signInWithGoogleReal(_loginHintEmail?: string): Promise<Us
     };
   }
 
+  let callbackUrl: URL;
+  try {
+    callbackUrl = new URL(String(urlJson.redirectUri || ''));
+  } catch {
+    throw {
+      code: 'INVALID_OAUTH_CALLBACK',
+      message: 'Google Sign-In returned an invalid callback URL.',
+    };
+  }
+  if (
+    (callbackUrl.protocol !== 'https:' && callbackUrl.protocol !== 'http:') ||
+    callbackUrl.pathname.replace(/\/+$/, '') !== '/auth/callback' ||
+    callbackUrl.username ||
+    callbackUrl.password
+  ) {
+    throw {
+      code: 'INVALID_OAUTH_CALLBACK',
+      message: 'Google Sign-In returned an invalid callback URL.',
+    };
+  }
+  const expectedCallbackOrigin = callbackUrl.origin;
+
   const rawUrl = String(urlJson.url);
   const targetUrl = rawUrl.startsWith('/') ? `${origin}${rawUrl}` : rawUrl;
 
@@ -1135,6 +1152,16 @@ export async function signInWithGoogleReal(_loginHintEmail?: string): Promise<Us
     };
 
     const onMessage = async (event: MessageEvent) => {
+      if (
+        !isTrustedGoogleOAuthPopupMessage(
+          event.origin,
+          event.source,
+          popup,
+          expectedCallbackOrigin
+        )
+      ) {
+        return;
+      }
       const payload = event.data;
       if (!payload || typeof payload !== 'object') return;
       if (payload.type === 'OAUTH_AUTH_SUCCESS') {
@@ -1175,6 +1202,15 @@ export async function signInWithGoogleReal(_loginHintEmail?: string): Promise<Us
       }
     }, 500);
   });
+}
+
+export function isTrustedGoogleOAuthPopupMessage(
+  eventOrigin: string,
+  eventSource: unknown,
+  popupSource: unknown,
+  expectedOrigin: string
+): boolean {
+  return eventOrigin === expectedOrigin && eventSource === popupSource;
 }
 
 /**

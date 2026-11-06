@@ -93,6 +93,7 @@ import {
   SESSION_TTL_MS,
   setOpaqueSessionCookie,
   verifyGoogleOidcIdToken,
+  resolveTrustedClientIp,
   verifyRawSessionFromHeaders,
   verifyRequestSession,
 } from './authAndSessionService';
@@ -106,17 +107,29 @@ export interface NeonApiRouterOptions {
   otpServiceOptions?: OtpServiceOptions;
 }
 
-export function resolveGoogleOauthClientId(): string {
+function firstConfiguredGoogleCredential(...values: Array<string | undefined>): string {
   return (
-    process.env.GOOGLE_CLIENT_ID ||
-    process.env.VITE_GOOGLE_CLIENT_ID ||
-    process.env.OAUTH_CLIENT_ID ||
+    values
+      .map((value) => String(value || '').trim())
+      .find((value) => value && !/^(YOUR_|GENERATE_|REPLACE_|CHANGE_ME|PLACEHOLDER)/i.test(value)) ||
     ''
-  ).trim();
+  );
+}
+
+export function resolveGoogleOauthClientId(): string {
+  return firstConfiguredGoogleCredential(
+    process.env.GOOGLE_CLIENT_ID ||
+      undefined,
+    process.env.VITE_GOOGLE_CLIENT_ID,
+    process.env.OAUTH_CLIENT_ID
+  );
 }
 
 export function resolveGoogleOauthClientSecret(): string {
-  return (process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_CLIENT_SECRET || '').trim();
+  return firstConfiguredGoogleCredential(
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.OAUTH_CLIENT_SECRET
+  );
 }
 
 /** Authentication sandbox is opt-in for local non-production development only. */
@@ -194,12 +207,8 @@ export function createNeonApiRouter(options?: NeonApiRouterOptions): Router {
   const otpService = options?.otpService || new BloodSearchOtpService(options?.otpServiceOptions);
   let seededHospitalsOnce = false;
 
-  const extractRawClientIp = (req: Request): string => {
-    const xff = req.headers['x-forwarded-for'];
-    if (typeof xff === 'string' && xff.trim()) return xff.split(',')[0]!.trim();
-    if (Array.isArray(xff) && xff.length > 0) return String(xff[0]).trim();
-    return req.socket?.remoteAddress || req.ip || '127.0.0.1';
-  };
+  const extractRawClientIp = (req: Request): string =>
+    resolveTrustedClientIp(req.headers, req.socket?.remoteAddress);
 
   const requireDatabase = async (res: Response): Promise<BloodSearchDatabase | null> => {
     const { db } = await ensureMainPostgresReady();

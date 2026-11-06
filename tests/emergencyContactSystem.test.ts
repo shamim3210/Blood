@@ -23,6 +23,8 @@ import { createEmergencyApiApp, sha256Short, type VerifiedCaller } from '../serv
 import { closeNeonDatabase } from '../src/db/index';
 import type { Donor, BloodRequest } from '../src/types';
 
+process.env.NODE_ENV = 'test';
+
 after(async () => {
   await closeNeonDatabase();
 });
@@ -759,6 +761,5 @@ test('10. Full-stack security audit enforces verified stop/audit auth, cross-use
     );
   }
 });
-
 
 
