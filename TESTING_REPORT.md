@@ -69,15 +69,17 @@ checks were run against the current local workspace:
 | Live `/api/v1/auth/config` | **HTTP 500**; production authentication is not ready |
 | Neon `production` branch / `neondb` | **28 public tables**; no application RLS policies are installed |
 
-The local `.env` and Vercel Production environment do not have the real Neon
-`DATABASE_URL` or Google OAuth client credentials. The Neon schema migration was
-applied; the temporary Console-created administrator roles were deleted after
-their inherited privileges were detected. A SQL-created runtime role now has
-DML-only grants, append-only audit access, and no inherited Neon administrator
-privileges; its connection is not yet configured in Vercel. Google Cloud denies
-access to OAuth client details (`oauthconfig.testusers.get` is missing). No
-production secrets were copied into source or chat, no application data was
-changed, and no paid plan or billing setting was enabled.
+The local `.env` and Vercel Production environment do not have Google OAuth
+credentials. The Neon schema migration was applied; the temporary Console-created
+administrator roles were deleted after their inherited privileges were detected.
+A SQL-created runtime role now has DML-only grants, append-only audit access, and
+no inherited Neon administrator privileges. The Vercel `blood-search-apk` project
+is connected to `shamim3210/Blood` and has the pooled runtime `DATABASE_URL`
+configured for Production; deployment and live database-health verification are
+pending. Google Cloud denies access to OAuth client details
+(`oauthconfig.testusers.get` is missing). No production secrets were copied into
+source or chat, no application data was changed, and no paid plan or billing
+setting was enabled.
 
 RLS was not enabled: the API does not yet establish transaction-scoped user
 identity for row-level policies. Enabling RLS without matching policies/context would break API access;

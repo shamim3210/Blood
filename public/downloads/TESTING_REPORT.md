@@ -54,8 +54,9 @@ and `npm run build`; all passed. The live site responds with HTTP 200, but
 
 The Neon production database has the 28-table schema. Its SQL-created
 `bloodsearch_app_runtime` role has DML-only grants, append-only audit access, and
-no inherited Neon administrator privileges. Vercel is not yet configured with
-the runtime database URL or Google OAuth credentials. RLS remains disabled
-because the API does not establish transaction-scoped identity or install
-matching policies. Google OAuth project access is unavailable to the current
-account. No paid plan or billing setting was enabled.
+no inherited Neon administrator privileges. The Vercel `blood-search-apk`
+project is connected to `shamim3210/Blood` and has the pooled runtime
+`DATABASE_URL` configured for Production; deployment and database-health
+verification are pending. Google OAuth credentials remain unavailable. RLS
+remains disabled because the API does not establish transaction-scoped identity
+or install matching policies. No paid plan or billing setting was enabled.

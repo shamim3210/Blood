@@ -38,14 +38,14 @@ All legacy Firebase SDKs (`firebase`, `firebase-admin`, `@firebase/*`), Firestor
 ### Live deployment status (2026-11-07)
 
 These are source-level controls, not evidence that production is fully configured.
-The Neon `production` branch has the 28-table schema, but no safe runtime role has
-been provisioned with DML-only grants and verified to have no inherited
-`neon_superuser` privileges. The live `/api/v1/auth/config` endpoint returns HTTP
-500, and Vercel is missing the database and Google OAuth credentials. RLS remains
-disabled because the API does not establish transaction-scoped actor context or
-install matching policies. Do not treat production login/database access as ready
-until an authorized owner configures Vercel with the runtime connection, completes
-Google OAuth setup, deploys, and verifies the live endpoints.
+The Neon `production` branch has the 28-table schema, and the SQL-created runtime
+role has DML-only grants with no inherited `neon_superuser` privileges. The Vercel
+`blood-search-apk` project is connected to `shamim3210/Blood` and has the pooled
+runtime `DATABASE_URL` in Production; a deployment and live database health check
+are still pending. Google OAuth credentials remain unavailable, so login is not
+ready. RLS remains disabled because the API does not establish transaction-scoped
+actor context or install matching policies. Do not treat production as ready until
+deployment, database health, and authorized Google login are verified.
 
 ---
 
