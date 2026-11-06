@@ -1,16 +1,21 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { createEmergencyApiApp } from '../server';
+import type { createEmergencyApiApp } from '../server';
 
 process.env.BLOODSEARCH_SERVERLESS_MODE ||= 'true';
 process.env.BLOODSEARCH_DISABLE_EMBEDDED_PG ||= 'true';
 
-let cachedApp: ReturnType<typeof createEmergencyApiApp> | null = null;
+let cachedAppPromise: Promise<ReturnType<typeof createEmergencyApiApp>> | null = null;
 
-function getApp() {
-  if (!cachedApp) {
-    cachedApp = createEmergencyApiApp();
+function getApp(): Promise<ReturnType<typeof createEmergencyApiApp>> {
+  if (!cachedAppPromise) {
+    cachedAppPromise = import('../server')
+      .then(({ createEmergencyApiApp }) => createEmergencyApiApp())
+      .catch((error: unknown) => {
+        cachedAppPromise = null;
+        throw error;
+      });
   }
-  return cachedApp;
+  return cachedAppPromise;
 }
 
 const ALLOWED_HTTP_METHODS = new Set(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
@@ -120,7 +125,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   try {
-    const app = getApp();
+    const app = await getApp();
     await new Promise<void>((resolve) => {
       const done = () => resolve();
       res.once('finish', done);
@@ -142,7 +147,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         done();
       }
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      '[api] Server initialization or request failed:',
+      error instanceof Error ? error.name : 'UnknownError'
+    );
     sendSafeJsonFallback(req, res);
   }
 }
