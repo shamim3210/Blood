@@ -29,19 +29,20 @@ All legacy Firebase SDKs (`firebase`, `firebase-admin`, `@firebase/*`), Firestor
 - **Zero Frontend DB Exposure**: Build-time and runtime browser guard in `src/db/index.ts` throws `FATAL_SECURITY_VIOLATION` if ever imported into client code; ESLint `no-restricted-imports` blocks `src/db/*`, `pg`, `drizzle-orm`, and `@neondatabase/serverless` across frontend components.
 - **TLS & Connection Security**: `validateAndNormalizeNeonUrl` enforces `sslmode=verify-full` in production and redacts credentials from all pool error logs.
 - **Parameterized SQL Only**: 100% Drizzle ORM parameterized queries + strict server-side input validators (`assertCleanText`, `assertBloodGroup`, `normalizeBangladeshPhone`, `assertOptionalCoordinates`, `validateSafeImageDataUrl`).
-- **Least-Privilege Roles**: `drizzle/least_privilege_roles.sql` separates DDL migration access (`bloodsearch_migrator`) from runtime DML access (`bloodsearch_app_runtime`) and revokes `UPDATE`, `DELETE`, and `TRUNCATE` on `audit_logs` from the runtime role after schema migration.
+- **Least-Privilege Roles**: `drizzle/least_privilege_roles.sql` grants DML-only access to the SQL-created `bloodsearch_app_runtime` role and revokes `UPDATE`, `DELETE`, and `TRUNCATE` on `audit_logs`. The owner credential is reserved for trusted migrations and must never be used by the API.
 - **Production Schema Fail-Closed**: Production startup verifies the migrated schema but does not execute DDL with runtime credentials or fall back to a local database when Neon is unavailable.
 - **RLS Status**: PostgreSQL Row-Level Security is **not enabled**. The API currently performs authorization in server-side repositories and does not set transaction-scoped actor context for RLS policies; enabling RLS without those policies would break access control rather than improve it.
 
 ### Live deployment status (2026-11-07)
 
 These are source-level controls, not evidence that production is fully configured.
-The checked Neon `production` branch currently has no application tables, the live
-`/api/v1/auth/config` endpoint returns HTTP 500, and Vercel has not been configured
-with the real Neon and Google OAuth credentials. No RLS policy or schema migration
-has been applied to that branch. Do not treat production login/database access as
-ready until an authorized owner configures secrets, applies migrations and role
-grants, deploys the code, and verifies the live endpoints.
+The Neon `production` branch has the 28-table schema and a SQL-created runtime
+role with DML-only grants and no inherited `neon_superuser` privileges. The live
+`/api/v1/auth/config` endpoint returns HTTP 500, and Vercel is missing the database
+and Google OAuth credentials. RLS remains disabled because the API does not set
+transaction-scoped actor context or install matching policies. Do not treat
+production as ready until Vercel secrets and Google OAuth are configured, a
+deployment is verified, and authentication works.
 
 ---
 

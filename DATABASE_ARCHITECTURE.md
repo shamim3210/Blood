@@ -79,7 +79,9 @@ All multi-table state changes execute inside `db.transaction(async (tx) => { ...
 - Neon PostgreSQL is the application's sole database. There is no active Firestore
   dual-write or cutover path.
 - `DATABASE_URL` is the pooled runtime connection for `bloodsearch_app_runtime`;
-  `DIRECT_DATABASE_URL` is the direct migration connection for `bloodsearch_migrator`.
+  `DIRECT_DATABASE_URL` is the direct owner connection used only in a trusted
+  migration environment. Never place the owner connection in Vercel or another
+  application runtime.
 - Production startup verifies that the Drizzle schema is present but does not run
   schema DDL with application credentials. Missing schema or an unavailable Neon
   connection fails closed; apply migrations explicitly before deploying.

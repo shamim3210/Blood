@@ -45,3 +45,17 @@ All backend, authentication, session, RBAC, IDOR, rate-limiting, emergency SOS, 
 
 ### D. `tests/otpAuthSystem.test.ts` (`10/10 PASS`)
 - Verifies Bangladesh mobile E.164 normalization (ASCII + Bangla digits across GP, Robi, Banglalink, Airtel, Teletalk), salted HMAC-SHA256 OTP digests, 5-attempt OTP lockout, 300s expiry, 60s resend cooldown, per-phone & per-IP rate limits, strict production lock disabling Dev Sandbox OTP (`403 DEV_OTP_DISABLED_IN_PRODUCTION`), SSRF-guarded SMS gateway adapters (`W3SMS`, `ZENDSMS`, `BTRC_CUSTOM`), and zero Firebase remnants across the codebase.
+
+## 4. Current Deployment Snapshot (2026-11-07)
+
+The current local source was verified with `npm run lint`, `npm test` (43 tests),
+and `npm run build`; all passed. The live site responds with HTTP 200, but
+`/api/v1/auth/config` returns HTTP 500, so production authentication is not ready.
+
+The Neon production database has the 28-table schema. Its SQL-created
+`bloodsearch_app_runtime` role has DML-only grants, append-only audit access, and
+no inherited Neon administrator privileges. Vercel is not yet configured with
+the runtime database URL or Google OAuth credentials. RLS remains disabled
+because the API does not establish transaction-scoped identity or install
+matching policies. Google OAuth project access is unavailable to the current
+account. No paid plan or billing setting was enabled.

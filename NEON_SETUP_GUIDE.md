@@ -29,9 +29,19 @@ Verified against official Neon documentation (`neon.com/docs`):
 3. Select PostgreSQL **16** or **17**.
 
 ### Step 2: Create Least-Privilege Database Roles
-1. In Neon Console -> **Roles**, create login roles `bloodsearch_migrator` and `bloodsearch_app_runtime` with unique strong passwords. Store the generated passwords only in your password manager and hosting secret settings.
-2. Do not put database passwords in SQL files, SQL editor history, Git, screenshots, APKs, or chat.
-3. Use `neondb_owner` only to apply schema/grant setup; use `bloodsearch_migrator` for schema migrations and `bloodsearch_app_runtime` for the application API.
+1. As `neondb_owner`, create the application role in the Neon SQL Editor with `CREATE ROLE bloodsearch_app_runtime LOGIN;`. Do not create it through the Neon Roles UI: Console-created roles may inherit `neon_superuser`.
+2. Set an unexposed temporary password without putting a password literal in SQL history:
+   ```sql
+   DO $$
+   DECLARE initial_password text := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+   BEGIN
+     EXECUTE format('ALTER ROLE bloodsearch_app_runtime PASSWORD %L', initial_password);
+   END
+   $$;
+   ```
+3. Use the role's **Reset password** action in Neon Console to generate the password to keep. Store it only in a password manager and backend secret settings; do not query or save the temporary password.
+4. Keep the owner role for schema migrations and database grants through a trusted direct connection. Never use the owner connection for the application API or store it in Vercel.
+5. Do not put database passwords in SQL files, SQL editor history, Git, screenshots, APKs, or chat.
 
 ### Step 3: Copy Pooled vs Direct Connection Strings with `sslmode=verify-full`
 From the Neon Console **Connection Details** panel:
@@ -39,13 +49,10 @@ From the Neon Console **Connection Details** panel:
   ```text
   postgresql://bloodsearch_app_runtime:<STRONG_PASSWORD>@ep-<endpoint>-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=verify-full
   ```
-- **Migration Direct URL (`DIRECT_DATABASE_URL`)** — toggle **Connection pooling OFF** and select role `bloodsearch_migrator`:
-  ```text
-  postgresql://bloodsearch_migrator:<STRONG_PASSWORD>@ep-<endpoint>.ap-southeast-1.aws.neon.tech/neondb?sslmode=verify-full
-  ```
+- **Migration Direct URL (`DIRECT_DATABASE_URL`)** — use the `neondb_owner` connection only in a trusted local migration environment; do not add it to Vercel or other application runtime settings.
 
 ### Step 4: Configure Server Secrets & Apply Schema Migrations
-1. Add `DATABASE_URL` and `DIRECT_DATABASE_URL` strictly to backend server secrets (AI Studio Secrets / Cloud Run Secret Manager). **Never** add them to `.env.example`, GitHub, or `VITE_*` variables.
+1. Add only the pooled runtime `DATABASE_URL` to backend server secrets (AI Studio Secrets / Cloud Run Secret Manager). Keep `DIRECT_DATABASE_URL` with the owner credential in a trusted local migration environment only. **Never** add either URL to `.env.example`, GitHub, or `VITE_*` variables.
 2. Run the deterministic Drizzle SQL migration:
    ```bash
    npm run db:migrate

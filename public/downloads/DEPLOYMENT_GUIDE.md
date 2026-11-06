@@ -12,15 +12,14 @@
 ## 2. Step-by-Step Neon PostgreSQL Provisioning
 
 1. Create a new project in [Neon Console](https://console.neon.tech) (recommended region: **AWS Singapore `ap-southeast-1`** for lowest latency in Bangladesh).
-2. In Neon Console -> **Roles**, create login roles `bloodsearch_migrator` and `bloodsearch_app_runtime` with unique strong passwords. Store passwords only in a password manager and backend secret settings; the SQL grants script contains no passwords.
-3. Copy two connection strings from Neon:
-   - **Pooled connection string** (`-pooler` hostname) with `?sslmode=verify-full` -> set as `DATABASE_URL` using `bloodsearch_app_runtime`.
-   - **Direct connection string** (non-pooler hostname) with `?sslmode=verify-full` -> set as `DIRECT_DATABASE_URL` using `bloodsearch_migrator`.
-4. Apply the 28-table schema migration:
+2. As `neondb_owner`, create `bloodsearch_app_runtime` with SQL (`CREATE ROLE bloodsearch_app_runtime LOGIN;`). Do not create it through the Neon Roles UI because Console-created roles may inherit `neon_superuser`.
+3. Set an unexposed temporary password using a SQL `DO` block that generates it with `gen_random_uuid()`; then use the role's **Reset password** action in Neon Console to generate the password to keep. Do not query or save the temporary password. Store the final password only in a password manager and backend secret settings.
+4. Copy a **pooled connection string** (`-pooler` hostname) with `?sslmode=verify-full`, using `bloodsearch_app_runtime`, and set it as `DATABASE_URL`. Keep the `neondb_owner` direct connection only in a trusted local migration environment; never put it in Vercel or another application runtime.
+5. Apply the 28-table schema migration:
    ```bash
    npm run db:migrate
    ```
-5. As `neondb_owner`, run `drizzle/least_privilege_roles.sql` to apply the runtime grants and prevent the API role from changing or deleting audit rows. Run it again after migrations that add tables. Production startup verifies the schema but never runs DDL; migrations must use the direct migration URL.
+6. As `neondb_owner`, run `drizzle/least_privilege_roles.sql` to apply the runtime grants and prevent the API role from changing or deleting audit rows. Run it again after migrations that add tables. Production startup verifies the schema but never runs DDL; migrations must use a trusted direct owner connection.
 
 ---
 

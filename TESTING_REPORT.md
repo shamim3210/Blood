@@ -67,18 +67,20 @@ checks were run against the current local workspace:
 | Debug APK copies | **MATCH**; root and `public/downloads/` copies have SHA-256 `A7198A8BBE9425FF683ED4B3913C88C13BF03FF6129156AA44601398EB1AF2D3` |
 | Live website | **HTTP 200** |
 | Live `/api/v1/auth/config` | **HTTP 500**; production authentication is not ready |
-| Neon `production` branch / `neondb` | **0 public tables**; no application RLS policies are installed |
+| Neon `production` branch / `neondb` | **28 public tables**; no application RLS policies are installed |
 
 The local `.env` and Vercel Production environment do not have the real Neon
-`DATABASE_URL` or Google OAuth client credentials. The Neon SQL Editor is reachable
-as `neondb_owner`, but no schema migration was run. Google Cloud denies access to
-OAuth client details (`oauthconfig.testusers.get` is missing). No production secrets
-were copied into source or chat, no database records were changed, and no paid plan
-or billing setting was enabled.
+`DATABASE_URL` or Google OAuth client credentials. The Neon schema migration was
+applied; the temporary Console-created administrator roles were deleted after
+their inherited privileges were detected. A SQL-created runtime role now has
+DML-only grants, append-only audit access, and no inherited Neon administrator
+privileges; its connection is not yet configured in Vercel. Google Cloud denies
+access to OAuth client details (`oauthconfig.testusers.get` is missing). No
+production secrets were copied into source or chat, no application data was
+changed, and no paid plan or billing setting was enabled.
 
-RLS was not enabled: the production branch currently has no application tables, and
-the API does not yet establish transaction-scoped user identity for row-level
-policies. Enabling RLS without matching policies/context would break API access;
+RLS was not enabled: the API does not yet establish transaction-scoped user
+identity for row-level policies. Enabling RLS without matching policies/context would break API access;
 the existing API performs authorization in its server-side repositories instead.
 Production Google sign-in and database-backed authentication remain blocked until
 the owner configures the Neon connection and authorized Google OAuth credentials in
