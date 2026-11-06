@@ -49,14 +49,17 @@ All backend, authentication, session, RBAC, IDOR, rate-limiting, emergency SOS, 
 ## 4. Current Deployment Snapshot (2026-11-07)
 
 The current local source was verified with `npm run lint`, `npm test` (43 tests),
-and `npm run build`; all passed. The live site responds with HTTP 200, but
-`/api/v1/auth/config` returns HTTP 500, so production authentication is not ready.
+and `npm run build`; all passed. The live site responds with HTTP 200.
+`/api/v1/auth/config` and `/api/v1/db/health` now return the safe HTTP 503
+fallback instead of Vercel's generic function 500, but production services are
+not ready.
 
 The Neon production database has the 28-table schema. Its SQL-created
 `bloodsearch_app_runtime` role has DML-only grants, append-only audit access, and
 no inherited Neon administrator privileges. The Vercel `blood-search-apk`
 project is connected to `shamim3210/Blood` and has the pooled runtime
-`DATABASE_URL` configured for Production; deployment and database-health
-verification are pending. Google OAuth credentials remain unavailable. RLS
+`DATABASE_URL` configured for Production. Deployment `c90f6ae` is Ready, but
+live database-health verification still fails with the safe 503 fallback.
+Google OAuth credentials remain unavailable. RLS
 remains disabled because the API does not establish transaction-scoped identity
 or install matching policies. No paid plan or billing setting was enabled.

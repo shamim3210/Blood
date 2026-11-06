@@ -66,7 +66,7 @@ checks were run against the current local workspace:
 | Debug APK metadata | **PASS**; package `bd.bloodsearch.app`, version `2.5.0` (`versionCode 250`) |
 | Debug APK copies | **MATCH**; root and `public/downloads/` copies have SHA-256 `A7198A8BBE9425FF683ED4B3913C88C13BF03FF6129156AA44601398EB1AF2D3` |
 | Live website | **HTTP 200** |
-| Live `/api/v1/auth/config` | **HTTP 500**; production authentication is not ready |
+| Live `/api/v1/auth/config` and `/api/v1/db/health` | **HTTP 503**; the API now fails closed instead of returning Vercel's generic function 500, but production services are not ready |
 | Neon `production` branch / `neondb` | **28 public tables**; no application RLS policies are installed |
 
 The local `.env` and Vercel Production environment do not have Google OAuth
@@ -75,8 +75,9 @@ administrator roles were deleted after their inherited privileges were detected.
 A SQL-created runtime role now has DML-only grants, append-only audit access, and
 no inherited Neon administrator privileges. The Vercel `blood-search-apk` project
 is connected to `shamim3210/Blood` and has the pooled runtime `DATABASE_URL`
-configured for Production; deployment and live database-health verification are
-pending. Google Cloud denies access to OAuth client details
+configured for Production. Deployment `c90f6ae` is Ready, but live API/database
+health checks return the safe 503 fallback and need further configuration
+verification. Google Cloud denies access to OAuth client details
 (`oauthconfig.testusers.get` is missing). No production secrets were copied into
 source or chat, no application data was changed, and no paid plan or billing
 setting was enabled.
